@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Prompt Foundry</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#0F2440;
+    --panel:#16304F;
+    --panel-2:#1C3A5E;
+    --cyan:#5EC8D8;
+    --amber:#E8A33D;
+    --mint:#7FE0C4;
+    --paper:#EAF2F5;
+    --muted:#8CA3B8;
+    --line: rgba(94,200,216,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0/32px 32px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/32px 32px,
+      var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    padding:28px;
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+  header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:8px;}
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:28px;font-weight:700;margin:0;
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--cyan);}
+  .tagline{color:var(--muted);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:20px;}
+  @media (max-width:880px){.grid{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px;
+  }
+  .panel h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--cyan);margin:0 0 14px 0;
+  }
+  .row{display:flex;gap:8px;margin-bottom:8px;}
+  input, textarea{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--paper);
+    border-radius:3px;
+    padding:8px 10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    width:100%;
+  }
+  input::placeholder, textarea::placeholder{color:var(--muted);opacity:.7;}
+  textarea{font-family:'Inter',sans-serif;resize:vertical;min-height:52px;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:3px;width:34px;flex:none;cursor:pointer;font-size:16px;
+  }
+  .icon-btn:hover{color:var(--amber);border-color:var(--amber);}
+  .add-link{
+    background:none;border:none;color:var(--mint);font-family:'IBM Plex Mono',monospace;
+    font-size:12px;cursor:pointer;padding:4px 0;text-align:left;
+  }
+  .add-link:hover{color:var(--cyan);}
+  .section-block{
+    border:1px dashed var(--line);border-radius:3px;padding:10px;margin-bottom:10px;
+  }
+  .divider{height:1px;background:var(--line);margin:18px 0;}
+  label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;}
+
+  .generate-btn{
+    width:100%;margin-top:8px;
+    background:var(--amber);color:var(--ink);border:none;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
+    padding:12px;border-radius:3px;cursor:pointer;letter-spacing:.02em;
+  }
+  .generate-btn:hover{filter:brightness(1.08);}
+  .generate-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* Output "spec sheet" */
+  .sheet{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:22px;
+    min-height:300px;
+  }
+  .crop{position:absolute;width:14px;height:14px;border-color:var(--cyan);opacity:.6;}
+  .crop.tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid;}
+  .crop.tr{top:8px;right:8px;border-top:2px solid;border-right:2px solid;}
+  .crop.bl{bottom:8px;left:8px;border-bottom:2px solid;border-left:2px solid;}
+  .crop.br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid;}
+
+  .empty-state{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:center;padding:60px 20px;}
+
+  .stamp{
+    display:inline-block;border:1.5px solid var(--amber);color:var(--amber);
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
+    letter-spacing:.14em;padding:3px 8px;border-radius:2px;transform:rotate(-2deg);
+    margin-bottom:14px;
+  }
+  .out-card{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .out-card h3{
+    font-family:'Space Grotesk',sans-serif;font-size:14px;margin:0 0 8px 0;color:var(--paper);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .copy-btn{
+    background:none;border:1px solid var(--line);color:var(--mint);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;
+    padding:3px 8px;border-radius:2px;
+  }
+  .copy-btn:hover{border-color:var(--mint);}
+  .out-text{
+    font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.6;color:var(--paper);
+    white-space:pre-wrap;
+  }
+  .tokens-used{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mint);
+    border:1px solid rgba(127,224,196,.35);border-radius:2px;padding:2px 6px;
+  }
+  .loading{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .loading::after{content:'';animation:dots 1.2s steps(4,end) infinite;}
+  @keyframes dots{0%,20%{content:'';}40%{content:'.';}60%{content:'..';}80%,100%{content:'...';}}
+  .err{color:#E88686;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Prompt<span>Foundry</span></h1>
+      <div class="tagline">// section-by-section Figma Canvas AI prompts, tied to your tokens</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: INPUT -->
+    <div class="panel">
+      <h2>01 — Brand tokens</h2>
+      <div id="tokenRows"></div>
+      <button class="add-link" onclick="addToken()">+ add token</button>
+
+      <div class="divider"></div>
+
+      <h2>02 — Sections to generate</h2>
+      <div id="sectionRows"></div>
+      <button class="add-link" onclick="addSection()">+ add section</button>
+
+      <div class="divider"></div>
+
+      <h2>03 — Audit / reference notes (optional)</h2>
+      <textarea id="notes" placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"></textarea>
+
+      <button class="generate-btn" id="genBtn" onclick="generateAll()">Generate prompts →</button>
+    </div>
+
+    <!-- RIGHT: OUTPUT -->
+    <div class="sheet">
+      <div class="crop tl"></div><div class="crop tr"></div>
+      <div class="crop bl"></div><div class="crop br"></div>
+      <div id="output">
+        <div class="empty-state">Add your tokens and sections on the left, then generate.<br>Each section gets its own paste-ready prompt.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let tokens = [
+  {name:'Primary color', value:''},
+  {name:'Font pairing', value:''},
+];
+let sections = [
+  {name:'Hero', desc:''},
+];
+
+function renderTokens(){
+  const el = document.getElementById('tokenRows');
+  el.innerHTML = tokens.map((t,i)=>`
+    <div class="row">
+      <input style="flex:1" placeholder="token name (e.g. Primary Navy)" value="${escapeHtml(t.name)}" oninput="tokens[${i}].name=this.value">
+      <input style="flex:1" placeholder="value (e.g. #1A1A2E)" value="${escapeHtml(t.value)}" oninput="tokens[${i}].value=this.value">
+      <button class="icon-btn" onclick="removeToken(${i})">×</button>
+    </div>`).join('');
+}
+function renderSections(){
+  const el = document.getElementById('sectionRows');
+  el.innerHTML = sections.map((s,i)=>`
+    <div class="section-block">
+      <div class="row">
+        <input style="flex:1" placeholder="section name (e.g. Pricing card)" value="${escapeHtml(s.name)}" oninput="sections[${i}].name=this.value">
+        <button class="icon-btn" onclick="removeSection(${i})">×</button>
+      </div>
+      <textarea placeholder="what it should contain / do" oninput="sections[${i}].desc=this.value">${escapeHtml(s.desc)}</textarea>
+    </div>`).join('');
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function addToken(){tokens.push({name:'',value:''});renderTokens();}
+function removeToken(i){tokens.splice(i,1);renderTokens();}
+function addSection(){sections.push({name:'',desc:''});renderSections();}
+function removeSection(i){sections.splice(i,1);renderSections();}
+
+renderTokens();
+renderSections();
+
+async function callClaude(section, tokenList, notes){
+  const tokenText = tokenList.filter(t=>t.name||t.value).map(t=>`${t.name}: ${t.value}`).join('\n');
+  const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. Rules:
+- Reference the exact brand tokens given (by name and value) inside the prompt text itself, naturally, the way a designer would write "using Primary Navy #1A1A2E for the background".
+- Be concrete and implementation-ready: layout, hierarchy, spacing logic, component behavior. No vague adjectives without a concrete instruction attached.
+- Actively avoid generic AI-design clichés: no default gradient-hero, no meaningless numbered badges (01/02/03) unless the content is a real sequence, no generic stock-photo language, no filler copy like "unlock your potential."
+- Output ONLY the prompt text for this one section, 4-7 sentences, no headers, no preamble, no markdown.`;
+  const user = `Section: ${section.name}\nWhat it should contain/do: ${section.desc || '(use your judgement based on the section name and tokens)'}\n\nBrand tokens:\n${tokenText || '(none given — keep it token-agnostic)'}\n\nAudit/reference notes: ${notes || '(none)'}`;
+
+  const resp = await fetch("/api/generate", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ system, user })
+  });
+  if(!resp.ok) throw new Error("Request failed");
+  const data = await resp.json();
+  return data.text.trim();
+}
+
+function detectTokensUsed(text, tokenList){
+  return tokenList.filter(t=>{
+    if(!t.name && !t.value) return false;
+    const hitName = t.name && text.toLowerCase().includes(t.name.toLowerCase());
+    const hitVal = t.value && text.toLowerCase().includes(t.value.toLowerCase());
+    return hitName || hitVal;
+  });
+}
+
+async function generateAll(){
+  const btn = document.getElementById('genBtn');
+  const validSections = sections.filter(s=>s.name.trim());
+  if(validSections.length===0){ alert('Add at least one section name first.'); return; }
+  btn.disabled = true; btn.textContent = 'Generating…';
+
+  const notes = document.getElementById('notes').value;
+  const out = document.getElementById('output');
+  out.innerHTML = `<div class="stamp">IN PROGRESS</div>` + validSections.map((s,i)=>`
+    <div class="out-card" id="card-${i}">
+      <h3>${escapeHtml(s.name)}</h3>
+      <div class="loading">generating</div>
+    </div>`).join('');
+
+  for(let i=0;i<validSections.length;i++){
+    const card = document.getElementById(`card-${i}`);
+    try{
+      const text = await callClaude(validSections[i], tokens, notes);
+      const used = detectTokensUsed(text, tokens);
+      card.innerHTML = `
+        <h3>${escapeHtml(validSections[i].name)}
+          <button class="copy-btn" onclick="copyText(this)">copy</button>
+        </h3>
+        <div class="out-text">${escapeHtml(text)}</div>
+        ${used.length ? `<div class="tokens-used">${used.map(t=>`<span class="chip">${escapeHtml(t.name)}</span>`).join('')}</div>` : ''}
+      `;
+    }catch(e){
+      card.innerHTML = `<h3>${escapeHtml(validSections[i].name)}</h3><div class="err">Couldn't generate this one — try again.</div>`;
+    }
+  }
+  const stamp = out.querySelector('.stamp');
+  if(stamp){ stamp.textContent = 'READY TO PASTE'; }
+  btn.disabled = false; btn.textContent = 'Generate prompts →';
+}
+
+function copyText(btn){
+  const text = btn.closest('.out-card').querySelector('.out-text').innerText;
+  navigator.clipboard.writeText(text);
+  const old = btn.textContent;
+  btn.textContent = 'copied';
+  setTimeout(()=>btn.textContent = old, 1200);
+}
+</script>
+</body>
+</html>
