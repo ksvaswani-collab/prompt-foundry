@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Personal AI agent: generates section-by-section Figma Canvas AI prompts tied to brand tokens.",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vercel dev"
   }
