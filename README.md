@@ -22,9 +22,19 @@ workflow you already use manually for client audits.
    ```
 2. Go to https://vercel.com/new and import that repo.
 3. In the Vercel project's **Settings → Environment Variables**, add:
-   - `ANTHROPIC_API_KEY` = your Anthropic API key (get one at https://console.anthropic.com)
+   - `GEMINI_API_KEY` = your Gemini API key (get one free, no credit card, at https://aistudio.google.com/apikey)
 4. Deploy. Vercel automatically detects `api/generate.js` as a serverless function —
    no other config needed.
+
+## Getting a free Gemini API key
+1. Go to https://aistudio.google.com/apikey
+2. Sign in with your Google account
+3. Click "Create API key" — no credit card required
+4. Copy the key and paste it into Vercel's environment variable above
+
+The free tier runs on `gemini-2.5-flash`, which is what this project uses. It's rate-limited
+(not unlimited) but plenty for personal use — well beyond what one designer generating
+prompts throughout the day would hit.
 
 ## Deploy to Netlify instead
 Netlify functions use a slightly different shape than Vercel's. Move
@@ -35,7 +45,7 @@ exports.handler = async (event) => {
   // ...same fetch logic, return { statusCode: 200, body: JSON.stringify({ text }) }
 };
 ```
-Then set `ANTHROPIC_API_KEY` under Site settings → Environment variables, and
+Then set `GEMINI_API_KEY` under Site settings → Environment variables, and
 update the frontend fetch URL from `/api/generate` to `/.netlify/functions/generate`.
 
 ## Local testing
@@ -47,5 +57,6 @@ Then open the local URL it gives you.
 
 ## Notes
 - Your API key never touches the browser — it stays in the serverless function.
-- `max_tokens` is capped at 1000 per section to keep costs predictable; increase
+- Uses Gemini's free tier (`gemini-2.5-flash`) — no billing setup required to start.
+- `maxOutputTokens` is capped at 1000 per section to keep responses fast; increase
   in `api/generate.js` if you want longer prompts.

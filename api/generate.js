@@ -1,5 +1,6 @@
-// Vercel serverless function — keeps your Anthropic API key on the server.
-// Set ANTHROPIC_API_KEY in your Vercel project's Environment Variables.
+// Vercel serverless function — keeps your Gemini API key on the server.
+// Set GEMINI_API_KEY in your Vercel project's Environment Variables.
+// Get a free key (no credit card needed) at https://aistudio.google.com/apikey
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,19 +12,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing 'user' prompt in request body" });
   }
 
+  const model = "gemini-2.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        system: system || "",
-        messages: [{ role: "user", content: user }],
+        contents: [{ role: "user", parts: [{ text: user }] }],
+        systemInstruction: { parts: [{ text: system || "" }] },
+        generationConfig: { maxOutputTokens: 1000 },
       }),
     });
 
@@ -33,12 +32,12 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const textBlock = (data.content || []).find((c) => c.type === "text");
-    if (!textBlock) {
-      return res.status(500).json({ error: "No text in Claude's response" });
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      return res.status(500).json({ error: "No text in Gemini's response" });
     }
 
-    return res.status(200).json({ text: textBlock.text });
+    return res.status(200).json({ text: text.trim() });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
