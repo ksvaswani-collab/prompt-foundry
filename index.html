@@ -4,186 +4,215 @@
 <meta charset="UTF-8">
 <title>Prompt Foundry</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#0F2440;
+  --panel:#16304F;
+  --panel-2:#1C3A5E;
+  --cyan:#5EC8D8;
+  --amber:#E8A33D;
+  --mint:#7FE0C4;
+  --paper:#EAF2F5;
+  --muted:#8CA3B8;
+  --line: rgba(94,200,216,0.18);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px) 0 0/32px 32px,
+    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/32px 32px,
+    var(--ink);
+  color:var(--paper);
+  font-family:'Inter',sans-serif;
+  padding:28px;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;}
+header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:8px;}
+h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:28px;font-weight:700;margin:0;
+  letter-spacing:-0.01em;
+}
+h1 span{color:var(--cyan);}
+.tagline{color:var(--muted);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+.grid{display:grid;grid-template-columns:1fr 1.15fr;gap:20px;}
+@media (max-width:880px){.grid{grid-template-columns:1fr;}}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:20px;
+}
+.panel h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);margin:0 0 14px 0;
+}
+.row{display:flex;gap:8px;margin-bottom:8px;}
+input, textarea{
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  color:var(--paper);
+  border-radius:3px;
+  padding:8px 10px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;
+  width:100%;
+}
+input::placeholder, textarea::placeholder{color:var(--muted);opacity:.7;}
+textarea{font-family:'Inter',sans-serif;resize:vertical;min-height:52px;}
+.icon-btn{
+  background:transparent;border:1px solid var(--line);color:var(--muted);
+  border-radius:3px;width:34px;flex:none;cursor:pointer;font-size:16px;
+}
+.icon-btn:hover{color:var(--amber);border-color:var(--amber);}
+.add-link{
+  background:none;border:none;color:var(--mint);font-family:'IBM Plex Mono',monospace;
+  font-size:12px;cursor:pointer;padding:4px 0;text-align:left;
+}
+.add-link:hover{color:var(--cyan);}
+.section-block{
+  border:1px dashed var(--line);border-radius:3px;padding:10px;margin-bottom:10px;
+}
+.divider{height:1px;background:var(--line);margin:18px 0;}
+label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;}
+.generate-btn{
+  width:100%;margin-top:8px;
+  background:var(--amber);color:var(--ink);border:none;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
+  padding:12px;border-radius:3px;cursor:pointer;letter-spacing:.02em;
+}
+.generate-btn:hover{filter:brightness(1.08);}
+.generate-btn:disabled{opacity:.5;cursor:not-allowed;}
 
-  :root{
-    --ink:#0F2440;
-    --panel:#16304F;
-    --panel-2:#1C3A5E;
-    --cyan:#5EC8D8;
-    --amber:#E8A33D;
-    --mint:#7FE0C4;
-    --paper:#EAF2F5;
-    --muted:#8CA3B8;
-    --line: rgba(94,200,216,0.18);
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:
-      linear-gradient(var(--line) 1px, transparent 1px) 0 0/32px 32px,
-      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/32px 32px,
-      var(--ink);
-    color:var(--paper);
-    font-family:'Inter',sans-serif;
-    padding:28px;
-    min-height:100vh;
-  }
-  .wrap{max-width:1180px;margin:0 auto;}
-  header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:8px;}
-  h1{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:28px;font-weight:700;margin:0;
-    letter-spacing:-0.01em;
-  }
-  h1 span{color:var(--cyan);}
-  .tagline{color:var(--muted);font-size:13px;font-family:'IBM Plex Mono',monospace;}
-  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:20px;}
-  @media (max-width:880px){.grid{grid-template-columns:1fr;}}
+/* resolution pills */
+.res-pill{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+  border-radius:3px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;
+  font-size:11.5px;cursor:pointer;text-align:left;line-height:1.5;
+}
+.res-pill .device{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+.res-pill.active{border-color:var(--amber);color:var(--amber);}
+.res-pill.active .device{color:var(--amber);}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 
-  .panel{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:20px;
-  }
-  .panel h2{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:13px;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--cyan);margin:0 0 14px 0;
-  }
-  .row{display:flex;gap:8px;margin-bottom:8px;}
-  input, textarea{
-    background:var(--panel-2);
-    border:1px solid var(--line);
-    color:var(--paper);
-    border-radius:3px;
-    padding:8px 10px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;
-    width:100%;
-  }
-  input::placeholder, textarea::placeholder{color:var(--muted);opacity:.7;}
-  textarea{font-family:'Inter',sans-serif;resize:vertical;min-height:52px;}
-  .icon-btn{
-    background:transparent;border:1px solid var(--line);color:var(--muted);
-    border-radius:3px;width:34px;flex:none;cursor:pointer;font-size:16px;
-  }
-  .icon-btn:hover{color:var(--amber);border-color:var(--amber);}
-  .add-link{
-    background:none;border:none;color:var(--mint);font-family:'IBM Plex Mono',monospace;
-    font-size:12px;cursor:pointer;padding:4px 0;text-align:left;
-  }
-  .add-link:hover{color:var(--cyan);}
-  .section-block{
-    border:1px dashed var(--line);border-radius:3px;padding:10px;margin-bottom:10px;
-  }
-  .divider{height:1px;background:var(--line);margin:18px 0;}
-  label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;}
+.surprise-btn{
+  width:100%;margin-top:6px;background:transparent;border:1px dashed var(--line);
+  color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;
+  padding:8px 10px;border-radius:3px;cursor:pointer;
+}
+.surprise-btn:hover{border-color:var(--amber);color:var(--amber);}
+.surprise-btn:disabled{opacity:.5;cursor:not-allowed;}
 
-  .generate-btn{
-    width:100%;margin-top:8px;
-    background:var(--amber);color:var(--ink);border:none;
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
-    padding:12px;border-radius:3px;cursor:pointer;letter-spacing:.02em;
-  }
-  .generate-btn:hover{filter:brightness(1.08);}
-  .generate-btn:disabled{opacity:.5;cursor:not-allowed;}
-
-  /* Output "spec sheet" */
-  .sheet{
-    position:relative;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:22px;
-    min-height:300px;
-  }
-  .crop{position:absolute;width:14px;height:14px;border-color:var(--cyan);opacity:.6;}
-  .crop.tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid;}
-  .crop.tr{top:8px;right:8px;border-top:2px solid;border-right:2px solid;}
-  .crop.bl{bottom:8px;left:8px;border-bottom:2px solid;border-left:2px solid;}
-  .crop.br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid;}
-
-  .empty-state{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:center;padding:60px 20px;}
-
-  .stamp{
-    display:inline-block;border:1.5px solid var(--amber);color:var(--amber);
-    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
-    letter-spacing:.14em;padding:3px 8px;border-radius:2px;transform:rotate(-2deg);
-    margin-bottom:14px;
-  }
-  .out-card{
-    background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
-    padding:14px 16px;margin-bottom:14px;
-  }
-  .out-card h3{
-    font-family:'Space Grotesk',sans-serif;font-size:14px;margin:0 0 8px 0;color:var(--paper);
-    display:flex;justify-content:space-between;align-items:center;
-  }
-  .copy-btn{
-    background:none;border:1px solid var(--line);color:var(--mint);
-    font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;
-    padding:3px 8px;border-radius:2px;
-  }
-  .copy-btn:hover{border-color:var(--mint);}
-  .out-text{
-    font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.6;color:var(--paper);
-    white-space:pre-wrap;
-  }
-  .tokens-used{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
-  .chip{
-    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mint);
-    border:1px solid rgba(127,224,196,.35);border-radius:2px;padding:2px 6px;
-  }
-  .loading{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
-  .loading::after{content:'';animation:dots 1.2s steps(4,end) infinite;}
-  @keyframes dots{0%,20%{content:'';}40%{content:'.';}60%{content:'..';}80%,100%{content:'...';}}
-  .err{color:#E88686;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+/* Output "spec sheet" */
+.sheet{
+  position:relative;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:22px;
+  min-height:300px;
+}
+.crop{position:absolute;width:14px;height:14px;border-color:var(--cyan);opacity:.6;}
+.crop.tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid;}
+.crop.tr{top:8px;right:8px;border-top:2px solid;border-right:2px solid;}
+.crop.bl{bottom:8px;left:8px;border-bottom:2px solid;border-left:2px solid;}
+.crop.br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid;}
+.empty-state{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:center;padding:60px 20px;}
+.stamp{
+  display:inline-block;border:1.5px solid var(--amber);color:var(--amber);
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:11px;
+  letter-spacing:.14em;padding:3px 8px;border-radius:2px;transform:rotate(-2deg);
+  margin-bottom:14px;
+}
+.out-card{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:3px;
+  padding:14px 16px;margin-bottom:14px;
+}
+.out-card h3{
+  font-family:'Space Grotesk',sans-serif;font-size:14px;margin:0 0 8px 0;color:var(--paper);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.copy-btn{
+  background:none;border:1px solid var(--line);color:var(--mint);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;
+  padding:3px 8px;border-radius:2px;
+}
+.copy-btn:hover{border-color:var(--mint);}
+.out-text{
+  font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.6;color:var(--paper);
+  white-space:pre-wrap;
+}
+.tokens-used{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
+.chip{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mint);
+  border:1px solid rgba(127,224,196,.35);border-radius:2px;padding:2px 6px;
+}
+.loading{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+.loading::after{content:'';animation:dots 1.2s steps(4,end) infinite;}
+@keyframes dots{0%,20%{content:'';}40%{content:'.';}60%{content:'..';}80%,100%{content:'...';}}
+.err{color:#E88686;font-family:'IBM Plex Mono',monospace;font-size:12px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div>
-      <h1>Prompt<span>Foundry</span></h1>
-      <div class="tagline">// section-by-section Figma Canvas AI prompts, tied to your tokens</div>
+<header>
+  <div>
+    <h1>Prompt<span>Foundry</span></h1>
+    <div class="tagline">// section-by-section Figma Canvas AI prompts, tied to your tokens</div>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- LEFT: INPUT -->
+  <div class="panel">
+    <h2>01 — Brand tokens</h2>
+    <div id="tokenRows"></div>
+    <button class="add-link" onclick="addToken()">+ add token</button>
+
+    <div class="divider"></div>
+    <h2>Font pairing</h2>
+    <div class="row">
+      <input id="fontHeadingInput" style="flex:1" placeholder="Heading font (e.g. Fraunces)"
+             value="" oninput="fontPair.heading=this.value">
+      <input id="fontBodyInput" style="flex:1" placeholder="Body font (e.g. Inter)"
+             value="" oninput="fontPair.body=this.value">
     </div>
-  </header>
+    <button class="surprise-btn" id="surpriseBtn" onclick="surpriseMeFont()">🎲 surprise me — let the AI pick a pairing</button>
 
-  <div class="grid">
-    <!-- LEFT: INPUT -->
-    <div class="panel">
-      <h2>01 — Brand tokens</h2>
-      <div id="tokenRows"></div>
-      <button class="add-link" onclick="addToken()">+ add token</button>
+    <div class="divider"></div>
+    <h2>Target resolution</h2>
+    <div class="res-grid" id="resGrid"></div>
 
-      <div class="divider"></div>
+    <div class="divider"></div>
+    <h2>02 — Sections to generate</h2>
+    <div id="sectionRows"></div>
+    <button class="add-link" onclick="addSection()">+ add section</button>
 
-      <h2>02 — Sections to generate</h2>
-      <div id="sectionRows"></div>
-      <button class="add-link" onclick="addSection()">+ add section</button>
+    <div class="divider"></div>
+    <h2>03 — Audit / reference notes (optional)</h2>
+    <textarea id="notes" placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"></textarea>
 
-      <div class="divider"></div>
+    <button class="generate-btn" id="genBtn" onclick="generateAll()">Generate prompts →</button>
+  </div>
 
-      <h2>03 — Audit / reference notes (optional)</h2>
-      <textarea id="notes" placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"></textarea>
-
-      <button class="generate-btn" id="genBtn" onclick="generateAll()">Generate prompts →</button>
-    </div>
-
-    <!-- RIGHT: OUTPUT -->
-    <div class="sheet">
-      <div class="crop tl"></div><div class="crop tr"></div>
-      <div class="crop bl"></div><div class="crop br"></div>
-      <div id="output">
-        <div class="empty-state">Add your tokens and sections on the left, then generate.<br>Each section gets its own paste-ready prompt.</div>
-      </div>
+  <!-- RIGHT: OUTPUT -->
+  <div class="sheet">
+    <div class="crop tl"></div><div class="crop tr"></div>
+    <div class="crop bl"></div><div class="crop br"></div>
+    <div id="output">
+      <div class="empty-state">Add your tokens and sections on the left, then generate.<br>Each section gets its own paste-ready prompt.</div>
     </div>
   </div>
+
+</div>
 </div>
 
 <script>
+// ---------- state ----------
 let tokens = [
   {name:'Primary color', value:''},
   {name:'Font pairing', value:''},
@@ -191,7 +220,17 @@ let tokens = [
 let sections = [
   {name:'Hero', desc:''},
 ];
+let fontPair = { heading:'', body:'' };
 
+const RESOLUTIONS = [
+  { id:'d1440', device:'Desktop', w:1440, h:1024 },
+  { id:'d1920', device:'Desktop', w:1920, h:1024 },
+  { id:'m375',  device:'Mobile',  w:375,  h:812 },
+  { id:'m390',  device:'Mobile',  w:390,  h:844 },
+];
+let selectedRes = 'd1440';
+
+// ---------- render: tokens ----------
 function renderTokens(){
   const el = document.getElementById('tokenRows');
   el.innerHTML = tokens.map((t,i)=>`
@@ -201,6 +240,10 @@ function renderTokens(){
       <button class="icon-btn" onclick="removeToken(${i})">×</button>
     </div>`).join('');
 }
+function addToken(){tokens.push({name:'',value:''});renderTokens();}
+function removeToken(i){tokens.splice(i,1);renderTokens();}
+
+// ---------- render: sections ----------
 function renderSections(){
   const el = document.getElementById('sectionRows');
   el.innerHTML = sections.map((s,i)=>`
@@ -212,52 +255,59 @@ function renderSections(){
       <textarea placeholder="what it should contain / do" oninput="sections[${i}].desc=this.value">${escapeHtml(s.desc)}</textarea>
     </div>`).join('');
 }
-function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-
-function addToken(){tokens.push({name:'',value:''});renderTokens();}
-function removeToken(i){tokens.splice(i,1);renderTokens();}
 function addSection(){sections.push({name:'',desc:''});renderSections();}
 function removeSection(i){sections.splice(i,1);renderSections();}
 
+// ---------- render: resolution ----------
+function renderRes(){
+  const el = document.getElementById('resGrid');
+  el.innerHTML = RESOLUTIONS.map(r=>`
+    <button type="button" class="res-pill ${r.id===selectedRes?'active':''}" onclick="selectedRes='${r.id}';renderRes();">
+      <span class="device">${r.device}</span>${r.w} × ${r.h}
+    </button>`).join('');
+}
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 renderTokens();
 renderSections();
+renderRes();
 
-async function callClaude(section, tokenList, notes){
-  const validTokens = tokenList.filter(t=>t.name||t.value);
-  const tokenText = validTokens.map(t=>`- ${t.name || '(unnamed)'}: ${t.value || '(no value given)'}`).join('\n');
-  const tokenNameList = validTokens.map(t=>t.name).filter(Boolean).join(', ');
+// ---------- surprise me (real backend call) ----------
+async function surpriseMeFont(){
+  const btn = document.getElementById('surpriseBtn');
+  btn.disabled = true;
+  btn.textContent = 'thinking…';
+  try{
+    const resp = await fetch('/api/suggest-fonts', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tokens, notes: document.getElementById('notes').value })
+    });
+    if(!resp.ok) throw new Error('request failed');
+    const data = await resp.json();
+    fontPair = { heading: data.heading, body: data.body };
+    document.getElementById('fontHeadingInput').value = fontPair.heading;
+    document.getElementById('fontBodyInput').value = fontPair.body;
+  }catch(e){
+    alert("Couldn't get a suggestion — try again.");
+  }
+  btn.disabled = false;
+  btn.textContent = '🎲 surprise me — let the AI pick a pairing';
+}
 
-  const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. The person deliberately gives you SHORT, sparse input (a section name, a couple lines of intent, a short token list) and expects you to expand it into a long, rich, fully-specified prompt — you are the one doing the elaboration, not them. Rules:
-
-DETAIL — this is the most important rule:
-- Never compress or summarize. Expand. A one-line section description should still produce a dense, multi-paragraph, implementation-ready prompt.
-- Cover, explicitly, wherever relevant to the section: layout and grid structure, visual hierarchy and sizing, spacing/rhythm logic, exact component states (default/hover/active/empty/error), responsive behavior, content structure (real copy direction, not placeholder), and interaction/motion notes.
-- Target roughly 250-450 words per section. Do not artificially cut it short. If anything, err toward more specificity, not less. Terse output is a failure.
-- Do not pad with vague adjectives ("modern", "clean", "sleek") unless immediately followed by the concrete instruction that makes them true.
-
-BRAND TOKENS — treat the token list as a hard constraint, not a suggestion:
-- You must use ONLY the tokens provided below. Reference each provided token by its exact name AND exact value at least once, naturally woven into the prompt (e.g. "background in Primary Navy (#1A1A2E)").
-- Do NOT invent, substitute, or add any color, font, spacing, or other token-like value that was not explicitly given. If something needs a value and no token covers it (e.g. no accent color was given), describe it structurally/relationally instead (e.g. "a muted neutral one step darker than the card background") rather than inventing a new hex code or font name.
-- If the token list is empty, say nothing about specific values — describe structure and hierarchy only, and note that token values should be filled in by the designer.
-
-STYLE:
-- Actively avoid generic AI-design clichés: no default gradient-hero, no meaningless numbered badges (01/02/03) unless the content is a real sequence, no stock-photo language, no filler copy like "unlock your potential."
-- Output ONLY the prompt text for this one section. No headers, no preamble, no markdown, no meta-commentary about what you're doing.`;
-
-  const user = `Section: ${section.name}
-What it should contain/do: ${section.desc || '(use your judgement based on the section name and tokens)'}
-
-Brand tokens (use ONLY these — do not invent others)${tokenText ? ` [${tokenNameList}]` : ''}:
-${tokenText || '(none given — keep it token-agnostic, describe structurally instead of inventing values)'}
-
-Audit/reference notes: ${notes || '(none)'}
-
-Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token listed above must appear by exact name and value somewhere in the output.`;
-
+// ---------- generate: send structured data, let the backend build the prompt ----------
+async function callGenerate(section){
   const resp = await fetch("/api/generate", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ system, user })
+    body: JSON.stringify({
+      section,
+      tokens,
+      fontPair,
+      resolution: RESOLUTIONS.find(r=>r.id===selectedRes),
+      notes: document.getElementById('notes').value
+    })
   });
   if(!resp.ok) throw new Error("Request failed");
   const data = await resp.json();
@@ -279,7 +329,6 @@ async function generateAll(){
   if(validSections.length===0){ alert('Add at least one section name first.'); return; }
   btn.disabled = true; btn.textContent = 'Generating…';
 
-  const notes = document.getElementById('notes').value;
   const out = document.getElementById('output');
   out.innerHTML = `<div class="stamp">IN PROGRESS</div>` + validSections.map((s,i)=>`
     <div class="out-card" id="card-${i}">
@@ -287,22 +336,32 @@ async function generateAll(){
       <div class="loading">generating</div>
     </div>`).join('');
 
+  const res = RESOLUTIONS.find(r=>r.id===selectedRes);
+
   for(let i=0;i<validSections.length;i++){
     const card = document.getElementById(`card-${i}`);
     try{
-      const text = await callClaude(validSections[i], tokens, notes);
+      const text = await callGenerate(validSections[i]);
       const used = detectTokensUsed(text, tokens);
+      const extraChips = [];
+      if(fontPair.heading || fontPair.body) extraChips.push(`${fontPair.heading||'?'} / ${fontPair.body||'?'}`);
+      extraChips.push(`${res.device} ${res.w}×${res.h}`);
+
       card.innerHTML = `
         <h3>${escapeHtml(validSections[i].name)}
           <button class="copy-btn" onclick="copyText(this)">copy</button>
         </h3>
         <div class="out-text">${escapeHtml(text)}</div>
-        ${used.length ? `<div class="tokens-used">${used.map(t=>`<span class="chip">${escapeHtml(t.name)}</span>`).join('')}</div>` : ''}
+        <div class="tokens-used">
+          ${used.map(t=>`<span class="chip">${escapeHtml(t.name)}</span>`).join('')}
+          ${extraChips.map(c=>`<span class="chip">${escapeHtml(c)}</span>`).join('')}
+        </div>
       `;
     }catch(e){
       card.innerHTML = `<h3>${escapeHtml(validSections[i].name)}</h3><div class="err">Couldn't generate this one — try again.</div>`;
     }
   }
+
   const stamp = out.querySelector('.stamp');
   if(stamp){ stamp.textContent = 'READY TO PASTE'; }
   btn.disabled = false; btn.textContent = 'Generate prompts →';
