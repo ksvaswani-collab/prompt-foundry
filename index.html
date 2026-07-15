@@ -295,7 +295,7 @@ function renderTokens(){
     <div class="row">
       <input style="flex:1" placeholder="token name (e.g. Primary Navy)" value="${escapeHtml(t.name)}" oninput="tokens[${i}].name=this.value">
       <input class="tokenValueInput" data-idx="${i}" style="flex:1" placeholder="value (e.g. #1A1A2E)" value="${escapeHtml(t.value)}" oninput="tokens[${i}].value=this.value; syncColorPicker(${i})">
-      <input type="color" class="tokenColorInput" data-idx="${i}" style="width:34px;padding:2px;flex:none;cursor:pointer;" value="${isValidHex(t.value) ? t.value : '#5ec8d8'}" oninput="tokens[${i}].value=this.value;renderTokens();" title="Pick a color (only relevant for color tokens)">
+      <input type="color" class="tokenColorInput" data-idx="${i}" style="width:34px;height:auto;padding:2px;flex:none;cursor:pointer;" value="${isValidHex(t.value) ? t.value : '#5ec8d8'}" oninput="tokens[${i}].value=this.value;renderTokens();" title="Pick a color (only relevant for color tokens)">
       <button class="icon-btn" onclick="removeToken(${i})">×</button>
     </div>`).join('');
 }
