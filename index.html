@@ -118,6 +118,21 @@ label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;fo
 .res-pill.active .device{color:var(--amber);}
 .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 
+/* light/dark mode switch */
+.mode-switch-row{display:flex;align-items:center;gap:12px;}
+.mode-switch{
+  position:relative;width:52px;height:28px;flex:none;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:999px;
+  cursor:pointer;transition:background .2s, border-color .2s;
+}
+.mode-switch.dark{background:var(--ink);border-color:var(--amber);}
+.mode-switch .thumb{
+  position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;
+  background:var(--cyan);transition:left .2s, background .2s;
+}
+.mode-switch.dark .thumb{left:26px;background:var(--amber);}
+.mode-switch-label{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--paper);}
+
 /* font preview */
 .font-preview{
   flex:1;background:var(--panel-2);border:1px solid var(--line);
@@ -222,6 +237,13 @@ label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;fo
     </div>
 
     <div class="divider"></div>
+    <h2>Appearance mode</h2>
+    <div class="mode-switch-row">
+      <div class="mode-switch" id="modeSwitch" onclick="toggleColorMode()"><div class="thumb"></div></div>
+      <span class="mode-switch-label" id="modeSwitchLabel">Light mode</span>
+    </div>
+
+    <div class="divider"></div>
     <h2>Target resolution</h2>
     <div class="res-grid" id="resGrid"></div>
 
@@ -260,6 +282,7 @@ let sections = [
 ];
 let fontPair = { heading:'', body:'' };
 let industry = { preset: '', custom: '' };
+let colorMode = 'light';
 
 // Keep this list identical to FONT_OPTIONS in api/suggest-fonts.js —
 // the backend validates its AI suggestions against that same list.
@@ -295,7 +318,7 @@ function renderTokens(){
     <div class="row">
       <input style="flex:1" placeholder="token name (e.g. Primary Navy)" value="${escapeHtml(t.name)}" oninput="tokens[${i}].name=this.value">
       <input class="tokenValueInput" data-idx="${i}" style="flex:1" placeholder="value (e.g. #1A1A2E)" value="${escapeHtml(t.value)}" oninput="tokens[${i}].value=this.value; syncColorPicker(${i})">
-      <input type="color" class="tokenColorInput" data-idx="${i}" style="width:34px;height:auto;padding:2px;flex:none;cursor:pointer;" value="${isValidHex(t.value) ? t.value : '#5ec8d8'}" oninput="tokens[${i}].value=this.value;renderTokens();" title="Pick a color (only relevant for color tokens)">
+      <input type="color" class="tokenColorInput" data-idx="${i}" style="width:34px;height:auto;padding:2px;flex:none;cursor:pointer;" value="${isValidHex(t.value) ? t.value : '#5ec8d8'}" oninput="onColorPick(${i}, this.value)" title="Pick a color (only relevant for color tokens)">
       <button class="icon-btn" onclick="removeToken(${i})">×</button>
     </div>`).join('');
 }
@@ -303,6 +326,14 @@ function syncColorPicker(i){
   const val = tokens[i].value;
   if(!isValidHex(val)) return;
   document.querySelectorAll(`.tokenColorInput[data-idx="${i}"]`).forEach(c => { c.value = val; });
+}
+// Called on every tick while dragging the native color picker. We deliberately do NOT
+// re-render the token list here — recreating the color <input> node while its native
+// popup is open is what was forcing the popup to close after one click/drag.
+function onColorPick(i, value){
+  tokens[i].value = value;
+  const textInput = document.querySelector(`.tokenValueInput[data-idx="${i}"]`);
+  if(textInput) textInput.value = value;
 }
 function addToken(){tokens.push({name:'',value:''});renderTokens();}
 function removeToken(i){tokens.splice(i,1);renderTokens();}
@@ -353,6 +384,17 @@ function resolvedIndustry(){
   return industry.preset;
 }
 
+function toggleColorMode(){
+  colorMode = colorMode === 'light' ? 'dark' : 'light';
+  renderModeSwitch();
+}
+function renderModeSwitch(){
+  const el = document.getElementById('modeSwitch');
+  const label = document.getElementById('modeSwitchLabel');
+  el.classList.toggle('dark', colorMode === 'dark');
+  label.textContent = colorMode === 'dark' ? 'Dark mode' : 'Light mode';
+}
+
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 // ---------- render: font selects + live preview ----------
@@ -387,6 +429,7 @@ function setFont(role, value){
 }
 
 renderTokens();
+renderModeSwitch();
 renderSections();
 renderRes();
 renderIndustrySelect();
@@ -403,6 +446,7 @@ async function callGenerate(section, retries = 3){
          fontPair,
          resolution: RESOLUTIONS.find(r=>r.id===selectedRes),
          industry: resolvedIndustry(),
+         mode: colorMode,
          notes: document.getElementById('notes').value
        })
      });
@@ -456,6 +500,7 @@ async function generateAll(){
       const extraChips = [];
       if(fontPair.heading || fontPair.body) extraChips.push(`${fontPair.heading||'?'} / ${fontPair.body||'?'}`);
       extraChips.push(`${res.device} ${res.w}×${res.h}`);
+      extraChips.push(colorMode === 'dark' ? 'Dark mode' : 'Light mode');
       const industryLabel = resolvedIndustry();
       if(industryLabel) extraChips.push(industryLabel);
 
