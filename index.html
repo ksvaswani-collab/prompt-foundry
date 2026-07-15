@@ -223,13 +223,36 @@ renderTokens();
 renderSections();
 
 async function callClaude(section, tokenList, notes){
-  const tokenText = tokenList.filter(t=>t.name||t.value).map(t=>`${t.name}: ${t.value}`).join('\n');
-  const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. Rules:
-- Reference the exact brand tokens given (by name and value) inside the prompt text itself, naturally, the way a designer would write "using Primary Navy #1A1A2E for the background".
-- Be concrete and implementation-ready: layout, hierarchy, spacing logic, component behavior. No vague adjectives without a concrete instruction attached.
-- Actively avoid generic AI-design clichés: no default gradient-hero, no meaningless numbered badges (01/02/03) unless the content is a real sequence, no generic stock-photo language, no filler copy like "unlock your potential."
-- Output ONLY the prompt text for this one section, 4-7 sentences, no headers, no preamble, no markdown.`;
-  const user = `Section: ${section.name}\nWhat it should contain/do: ${section.desc || '(use your judgement based on the section name and tokens)'}\n\nBrand tokens:\n${tokenText || '(none given — keep it token-agnostic)'}\n\nAudit/reference notes: ${notes || '(none)'}`;
+  const validTokens = tokenList.filter(t=>t.name||t.value);
+  const tokenText = validTokens.map(t=>`- ${t.name || '(unnamed)'}: ${t.value || '(no value given)'}`).join('\n');
+  const tokenNameList = validTokens.map(t=>t.name).filter(Boolean).join(', ');
+
+  const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. The person deliberately gives you SHORT, sparse input (a section name, a couple lines of intent, a short token list) and expects you to expand it into a long, rich, fully-specified prompt — you are the one doing the elaboration, not them. Rules:
+
+DETAIL — this is the most important rule:
+- Never compress or summarize. Expand. A one-line section description should still produce a dense, multi-paragraph, implementation-ready prompt.
+- Cover, explicitly, wherever relevant to the section: layout and grid structure, visual hierarchy and sizing, spacing/rhythm logic, exact component states (default/hover/active/empty/error), responsive behavior, content structure (real copy direction, not placeholder), and interaction/motion notes.
+- Target roughly 250-450 words per section. Do not artificially cut it short. If anything, err toward more specificity, not less. Terse output is a failure.
+- Do not pad with vague adjectives ("modern", "clean", "sleek") unless immediately followed by the concrete instruction that makes them true.
+
+BRAND TOKENS — treat the token list as a hard constraint, not a suggestion:
+- You must use ONLY the tokens provided below. Reference each provided token by its exact name AND exact value at least once, naturally woven into the prompt (e.g. "background in Primary Navy (#1A1A2E)").
+- Do NOT invent, substitute, or add any color, font, spacing, or other token-like value that was not explicitly given. If something needs a value and no token covers it (e.g. no accent color was given), describe it structurally/relationally instead (e.g. "a muted neutral one step darker than the card background") rather than inventing a new hex code or font name.
+- If the token list is empty, say nothing about specific values — describe structure and hierarchy only, and note that token values should be filled in by the designer.
+
+STYLE:
+- Actively avoid generic AI-design clichés: no default gradient-hero, no meaningless numbered badges (01/02/03) unless the content is a real sequence, no stock-photo language, no filler copy like "unlock your potential."
+- Output ONLY the prompt text for this one section. No headers, no preamble, no markdown, no meta-commentary about what you're doing.`;
+
+  const user = `Section: ${section.name}
+What it should contain/do: ${section.desc || '(use your judgement based on the section name and tokens)'}
+
+Brand tokens (use ONLY these — do not invent others)${tokenText ? ` [${tokenNameList}]` : ''}:
+${tokenText || '(none given — keep it token-agnostic, describe structurally instead of inventing values)'}
+
+Audit/reference notes: ${notes || '(none)'}
+
+Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token listed above must appear by exact name and value somewhere in the output.`;
 
   const resp = await fetch("/api/generate", {
     method:"POST",
