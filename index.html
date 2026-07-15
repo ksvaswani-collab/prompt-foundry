@@ -63,6 +63,14 @@ input, textarea{
 }
 input::placeholder, textarea::placeholder{color:var(--muted);opacity:.7;}
 textarea{font-family:'Inter',sans-serif;resize:vertical;min-height:52px;}
+select{
+  appearance:none;cursor:pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
+}
 .icon-btn{
   background:transparent;border:1px solid var(--line);color:var(--muted);
   border-radius:3px;width:34px;flex:none;cursor:pointer;font-size:16px;
@@ -176,10 +184,8 @@ label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;fo
     <div class="divider"></div>
     <h2>Font pairing</h2>
     <div class="row">
-      <input id="fontHeadingInput" style="flex:1" placeholder="Heading font (e.g. Fraunces)"
-             value="" oninput="fontPair.heading=this.value">
-      <input id="fontBodyInput" style="flex:1" placeholder="Body font (e.g. Inter)"
-             value="" oninput="fontPair.body=this.value">
+      <select id="fontHeadingInput" style="flex:1" onchange="fontPair.heading=this.value"></select>
+      <select id="fontBodyInput" style="flex:1" onchange="fontPair.body=this.value"></select>
     </div>
     <button class="surprise-btn" id="surpriseBtn" onclick="surpriseMeFont()">🎲 surprise me — let the AI pick a pairing</button>
 
@@ -221,6 +227,14 @@ let sections = [
   {name:'Hero', desc:''},
 ];
 let fontPair = { heading:'', body:'' };
+
+// Keep this list identical to FONT_OPTIONS in api/suggest-fonts.js —
+// the backend validates its AI suggestions against that same list.
+const FONT_OPTIONS = [
+  "Inter", "Space Grotesk", "IBM Plex Sans", "Sora", "DM Sans", "Manrope",
+  "Work Sans", "Poppins", "Fraunces", "Playfair Display", "Lora",
+  "Merriweather", "Georgia", "JetBrains Mono", "Nunito", "Outfit"
+];
 
 const RESOLUTIONS = [
   { id:'d1440', device:'Desktop', w:1440, h:1024 },
@@ -269,9 +283,17 @@ function renderRes(){
 
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
+function renderFontSelects(){
+  const opts = (selected) => `<option value="" ${!selected?'selected':''} disabled>Choose a font…</option>` +
+    FONT_OPTIONS.map(f => `<option value="${f}" ${f===selected?'selected':''}>${f}</option>`).join('');
+  document.getElementById('fontHeadingInput').innerHTML = opts(fontPair.heading);
+  document.getElementById('fontBodyInput').innerHTML = opts(fontPair.body);
+}
+
 renderTokens();
 renderSections();
 renderRes();
+renderFontSelects();
 
 // ---------- surprise me (real backend call) ----------
 async function surpriseMeFont(){
@@ -284,13 +306,16 @@ async function surpriseMeFont(){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ tokens, notes: document.getElementById('notes').value })
     });
-    if(!resp.ok) throw new Error('request failed');
     const data = await resp.json();
+    if(!resp.ok){
+      // Show the REAL error from the server instead of a generic message,
+      // so you can see exactly what went wrong (missing key, bad model, etc).
+      throw new Error(data.error || `Request failed with status ${resp.status}`);
+    }
     fontPair = { heading: data.heading, body: data.body };
-    document.getElementById('fontHeadingInput').value = fontPair.heading;
-    document.getElementById('fontBodyInput').value = fontPair.body;
+    renderFontSelects();
   }catch(e){
-    alert("Couldn't get a suggestion — try again.");
+    alert("Couldn't get a suggestion:\n\n" + e.message);
   }
   btn.disabled = false;
   btn.textContent = '🎲 surprise me — let the AI pick a pairing';
