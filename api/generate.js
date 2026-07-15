@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: user }] }],
         systemInstruction: { parts: [{ text: system || "" }] },
-        generationConfig: { maxOutputTokens: 1000 },
+        generationConfig: { maxOutputTokens: 3000, temperature: 0.9 },
       }),
     });
 
