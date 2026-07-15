@@ -322,22 +322,35 @@ async function surpriseMeFont(){
 }
 
 // ---------- generate: send structured data, let the backend build the prompt ----------
-async function callGenerate(section){
-  const resp = await fetch("/api/generate", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({
-      section,
-      tokens,
-      fontPair,
-      resolution: RESOLUTIONS.find(r=>r.id===selectedRes),
-      notes: document.getElementById('notes').value
-    })
-  });
-  if(!resp.ok) throw new Error("Request failed");
-  const data = await resp.json();
-  return data.text.trim();
-}
+async function callGenerate(section, retries = 3){
+     const resp = await fetch("/api/generate", {
+       method:"POST",
+       headers:{"Content-Type":"application/json"},
+       body: JSON.stringify({
+         section,
+         tokens,
+         fontPair,
+         resolution: RESOLUTIONS.find(r=>r.id===selectedRes),
+         notes: document.getElementById('notes').value
+       })
+     });
+
+     if(resp.status === 429 && retries > 0){
+       const wait = [2000, 5000, 10000][3 - retries];
+       await new Promise(r => setTimeout(r, wait));
+       return callGenerate(section, retries - 1);
+     }
+
+     if(!resp.ok){
+       const data = await resp.json().catch(()=>({}));
+       if(resp.status === 429){
+         throw new Error("Rate limited by Gemini — free tier quota hit. Wait a minute and try again.");
+       }
+       throw new Error(data.error || "Request failed");
+     }
+     const data = await resp.json();
+     return data.text.trim();
+   }
 
 function detectTokensUsed(text, tokenList){
   return tokenList.filter(t=>{
@@ -383,9 +396,13 @@ async function generateAll(){
         </div>
       `;
     }catch(e){
-      card.innerHTML = `<h3>${escapeHtml(validSections[i].name)}</h3><div class="err">Couldn't generate this one — try again.</div>`;
-    }
-  }
+       card.innerHTML = `<h3>${escapeHtml(validSections[i].name)}</h3><div class="err">${escapeHtml(e.message)}</div>`;
+     }
+
+     if(i < validSections.length - 1){
+       await new Promise(r => setTimeout(r, 1500));
+     }
+   }
 
   const stamp = out.querySelector('.stamp');
   if(stamp){ stamp.textContent = 'READY TO PASTE'; }
