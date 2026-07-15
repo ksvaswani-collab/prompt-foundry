@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Prompt Foundry</title>
+<!-- Loads every font in FONT_OPTIONS (below) so the live font preview can render them.
+     Georgia is a system font and isn't on Google Fonts, so it's skipped here. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&family=Sora:wght@400;700&family=DM+Sans:wght@400;700&family=Manrope:wght@400;700&family=Work+Sans:wght@400;700&family=Poppins:wght@400;700&family=Fraunces:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;700&family=Outfit:wght@400;700&display=swap">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 :root{
@@ -59,7 +62,7 @@ input, textarea{
   border-radius:3px;
   padding:8px 10px;
   font-family:'IBM Plex Mono',monospace;
-  font-size:14px;
+  font-size:13px;
   width:100%;
 }
 input::placeholder, textarea::placeholder{color:var(--muted);opacity:.7;}
@@ -107,20 +110,26 @@ label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;fo
 .res-pill{
   background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
   border-radius:3px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;
-  font-size:14px;cursor:pointer;text-align:left;line-height:1.5;
+  font-size:11.5px;cursor:pointer;text-align:left;line-height:1.5;
 }
-.res-pill .device{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+.res-pill .device{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
 .res-pill.active{border-color:var(--amber);color:var(--amber);}
 .res-pill.active .device{color:var(--amber);}
 .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 
-.surprise-btn{
-  width:100%;margin-top:6px;background:transparent;border:1px dashed var(--line);
-  color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;
-  padding:8px 10px;border-radius:3px;cursor:pointer;
+/* font preview */
+.font-preview{
+  flex:1;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:3px;padding:10px 12px;overflow:hidden;
 }
-.surprise-btn:hover{border-color:var(--amber);color:var(--amber);}
-.surprise-btn:disabled{opacity:.5;cursor:not-allowed;}
+.preview-label{
+  display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;
+}
+.preview-text{
+  display:block;font-size:16px;line-height:1.3;color:var(--paper);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 
 /* Output "spec sheet" */
 .sheet{
@@ -185,6 +194,11 @@ label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;fo
 
   <!-- LEFT: INPUT -->
   <div class="panel">
+    <h2>00 — Industry / context</h2>
+    <select id="industryInput" onchange="onIndustryChange(this.value)"></select>
+    <input id="industryCustomInput" style="margin-top:8px;display:none" placeholder="Describe the industry (e.g. B2B logistics software)" oninput="industry.custom=this.value">
+
+    <div class="divider"></div>
     <h2>01 — Brand tokens</h2>
     <div id="tokenRows"></div>
     <button class="add-link" onclick="addToken()">+ add token</button>
@@ -192,10 +206,19 @@ label.small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;fo
     <div class="divider"></div>
     <h2>Font pairing</h2>
     <div class="row">
-      <select id="fontHeadingInput" style="flex:1" onchange="fontPair.heading=this.value"></select>
-      <select id="fontBodyInput" style="flex:1" onchange="fontPair.body=this.value"></select>
+      <select id="fontHeadingInput" style="flex:1" onchange="setFont('heading', this.value)"></select>
+      <select id="fontBodyInput" style="flex:1" onchange="setFont('body', this.value)"></select>
     </div>
-    <button class="surprise-btn" id="surpriseBtn" onclick="surpriseMeFont()">🎲 surprise me — let the AI pick a pairing</button>
+    <div class="row">
+      <div class="font-preview">
+        <span class="preview-label">Heading</span>
+        <span class="preview-text" id="headingPreviewText">Select a heading font</span>
+      </div>
+      <div class="font-preview">
+        <span class="preview-label">Body</span>
+        <span class="preview-text" id="bodyPreviewText">Select a body font</span>
+      </div>
+    </div>
 
     <div class="divider"></div>
     <h2>Target resolution</h2>
@@ -235,6 +258,7 @@ let sections = [
   {name:'Hero', desc:''},
 ];
 let fontPair = { heading:'', body:'' };
+let industry = { preset: '', custom: '' };
 
 // Keep this list identical to FONT_OPTIONS in api/suggest-fonts.js —
 // the backend validates its AI suggestions against that same list.
@@ -242,6 +266,14 @@ const FONT_OPTIONS = [
   "Inter", "Space Grotesk", "IBM Plex Sans", "Sora", "DM Sans", "Manrope",
   "Work Sans", "Poppins", "Fraunces", "Playfair Display", "Lora",
   "Merriweather", "Georgia", "JetBrains Mono", "Nunito", "Outfit"
+];
+
+const INDUSTRIES = [
+  "SaaS / B2B Software", "Consumer / Tech App", "E-commerce / Retail",
+  "Fintech / Banking", "Healthcare / Medical", "Education / EdTech",
+  "Real Estate / Property", "Travel / Hospitality", "Food & Beverage",
+  "Fashion / Beauty", "Nonprofit / Cause-driven", "Legal / Professional Services",
+  "Media / Entertainment", "Government / Civic", "Custom…"
 ];
 
 const RESOLUTIONS = [
@@ -253,14 +285,23 @@ const RESOLUTIONS = [
 let selectedRes = 'd1440';
 
 // ---------- render: tokens ----------
+function isValidHex(v){
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test((v||'').trim());
+}
 function renderTokens(){
   const el = document.getElementById('tokenRows');
   el.innerHTML = tokens.map((t,i)=>`
     <div class="row">
       <input style="flex:1" placeholder="token name (e.g. Primary Navy)" value="${escapeHtml(t.name)}" oninput="tokens[${i}].name=this.value">
-      <input style="flex:1" placeholder="value (e.g. #1A1A2E)" value="${escapeHtml(t.value)}" oninput="tokens[${i}].value=this.value">
+      <input class="tokenValueInput" data-idx="${i}" style="flex:1" placeholder="value (e.g. #1A1A2E)" value="${escapeHtml(t.value)}" oninput="tokens[${i}].value=this.value; syncColorPicker(${i})">
+      <input type="color" class="tokenColorInput" data-idx="${i}" style="width:34px;padding:2px;flex:none;cursor:pointer;" value="${isValidHex(t.value) ? t.value : '#5ec8d8'}" oninput="tokens[${i}].value=this.value;renderTokens();" title="Pick a color (only relevant for color tokens)">
       <button class="icon-btn" onclick="removeToken(${i})">×</button>
     </div>`).join('');
+}
+function syncColorPicker(i){
+  const val = tokens[i].value;
+  if(!isValidHex(val)) return;
+  document.querySelectorAll(`.tokenColorInput[data-idx="${i}"]`).forEach(c => { c.value = val; });
 }
 function addToken(){tokens.push({name:'',value:''});renderTokens();}
 function removeToken(i){tokens.splice(i,1);renderTokens();}
@@ -289,45 +330,66 @@ function renderRes(){
     </button>`).join('');
 }
 
+// ---------- render: industry ----------
+function renderIndustrySelect(){
+  const el = document.getElementById('industryInput');
+  el.innerHTML = `<option value="" disabled ${!industry.preset?'selected':''}>Choose an industry…</option>` +
+    INDUSTRIES.map(i=>`<option value="${i}" ${i===industry.preset?'selected':''}>${i}</option>`).join('');
+}
+function onIndustryChange(val){
+  industry.preset = val;
+  const customInput = document.getElementById('industryCustomInput');
+  if(val === 'Custom…'){
+    customInput.style.display = 'block';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+    industry.custom = '';
+  }
+}
+function resolvedIndustry(){
+  if(industry.preset === 'Custom…') return industry.custom.trim();
+  return industry.preset;
+}
+
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
+// ---------- render: font selects + live preview ----------
 function renderFontSelects(){
   const opts = (selected) => `<option value="" ${!selected?'selected':''} disabled>Choose a font…</option>` +
     FONT_OPTIONS.map(f => `<option value="${f}" ${f===selected?'selected':''}>${f}</option>`).join('');
   document.getElementById('fontHeadingInput').innerHTML = opts(fontPair.heading);
   document.getElementById('fontBodyInput').innerHTML = opts(fontPair.body);
+
+  const headingPreview = document.getElementById('headingPreviewText');
+  const bodyPreview = document.getElementById('bodyPreviewText');
+
+  if(fontPair.heading){
+    headingPreview.style.fontFamily = `'${fontPair.heading}', sans-serif`;
+    headingPreview.textContent = fontPair.heading;
+  } else {
+    headingPreview.style.fontFamily = '';
+    headingPreview.textContent = 'Select a heading font';
+  }
+
+  if(fontPair.body){
+    bodyPreview.style.fontFamily = `'${fontPair.body}', sans-serif`;
+    bodyPreview.textContent = 'The quick brown fox jumps over the lazy dog';
+  } else {
+    bodyPreview.style.fontFamily = '';
+    bodyPreview.textContent = 'Select a body font';
+  }
+}
+function setFont(role, value){
+  fontPair[role] = value;
+  renderFontSelects();
 }
 
 renderTokens();
 renderSections();
 renderRes();
+renderIndustrySelect();
 renderFontSelects();
-
-// ---------- surprise me (real backend call) ----------
-async function surpriseMeFont(){
-  const btn = document.getElementById('surpriseBtn');
-  btn.disabled = true;
-  btn.textContent = 'thinking…';
-  try{
-    const resp = await fetch('/api/suggest-fonts', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ tokens, notes: document.getElementById('notes').value })
-    });
-    const data = await resp.json();
-    if(!resp.ok){
-      // Show the REAL error from the server instead of a generic message,
-      // so you can see exactly what went wrong (missing key, bad model, etc).
-      throw new Error(data.error || `Request failed with status ${resp.status}`);
-    }
-    fontPair = { heading: data.heading, body: data.body };
-    renderFontSelects();
-  }catch(e){
-    alert("Couldn't get a suggestion:\n\n" + e.message);
-  }
-  btn.disabled = false;
-  btn.textContent = '🎲 surprise me — let the AI pick a pairing';
-}
 
 // ---------- generate: send structured data, let the backend build the prompt ----------
 async function callGenerate(section, retries = 3){
@@ -339,6 +401,7 @@ async function callGenerate(section, retries = 3){
          tokens,
          fontPair,
          resolution: RESOLUTIONS.find(r=>r.id===selectedRes),
+         industry: resolvedIndustry(),
          notes: document.getElementById('notes').value
        })
      });
@@ -392,6 +455,8 @@ async function generateAll(){
       const extraChips = [];
       if(fontPair.heading || fontPair.body) extraChips.push(`${fontPair.heading||'?'} / ${fontPair.body||'?'}`);
       extraChips.push(`${res.device} ${res.w}×${res.h}`);
+      const industryLabel = resolvedIndustry();
+      if(industryLabel) extraChips.push(industryLabel);
 
       card.innerHTML = `
         <h3>${escapeHtml(validSections[i].name)}

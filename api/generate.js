@@ -3,11 +3,12 @@
 // Get a free key (no credit card needed) at https://aistudio.google.com/apikey
 //
 // This function now builds the actual system/user prompt itself from
-// structured fields (section, tokens, fontPair, resolution, notes) sent by
-// the browser. That way font pairing and target resolution are enforced
-// here, on the server, not just assembled as a string in the frontend.
+// structured fields (section, tokens, fontPair, resolution, industry, notes)
+// sent by the browser. That way font pairing, target resolution, and
+// industry context are enforced here, on the server, not just assembled as
+// a string in the frontend.
 
-function buildPrompt({ section, tokens, fontPair, resolution, notes }) {
+function buildPrompt({ section, tokens, fontPair, resolution, industry, notes }) {
   const validTokens = (tokens || []).filter(t => t.name || t.value);
   const tokenText = validTokens
     .map(t => `- ${t.name || '(unnamed)'}: ${t.value || '(no value given)'}`)
@@ -24,6 +25,8 @@ function buildPrompt({ section, tokens, fontPair, resolution, notes }) {
     ? resolution
     : { device: 'Desktop', w: 1440, h: 1024 };
 
+  const industryText = (industry || '').trim();
+
   const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. The person deliberately gives you SHORT, sparse input (a section name, a couple lines of intent, a short token list) and expects you to expand it into a long, rich, fully-specified prompt — you are the one doing the elaboration, not them. Rules:
 
 DETAIL — this is the most important rule:
@@ -31,6 +34,11 @@ DETAIL — this is the most important rule:
 - Cover, explicitly, wherever relevant to the section: layout and grid structure, visual hierarchy and sizing, spacing/rhythm logic, exact component states (default/hover/active/empty/error), responsive behavior, content structure (real copy direction, not placeholder), and interaction/motion notes.
 - Target roughly 250-450 words per section. Do not artificially cut it short. If anything, err toward more specificity, not less. Terse output is a failure.
 - Do not pad with vague adjectives ("modern", "clean", "sleek") unless immediately followed by the concrete instruction that makes them true.
+
+INDUSTRY CONTEXT — treat this as a real constraint on layout and content, not decoration:
+${industryText
+    ? `- This is being designed for: ${industryText}. Let this genuinely shape decisions: information density (e.g. dense/data-forward for fintech or B2B SaaS vs. spacious/visual for hospitality or fashion), the tone of the placeholder copy you write, which trust or compliance signals belong on the page (e.g. security badges and disclaimers for finance, credentialing/HIPAA-safe language for healthcare, clear pricing and return-policy cues for e-commerce), and which components are conventionally expected in that industry's product category. Do not just mention the industry name once — let it inform actual structural choices.`
+    : `- No industry was given. Use general, industry-agnostic UI/UX best practices — do not invent an industry.`}
 
 BRAND TOKENS — treat the token list as a hard constraint, not a suggestion:
 - You must use ONLY the tokens provided below. Reference each provided token by its exact name AND exact value at least once, naturally woven into the prompt (e.g. "background in Primary Navy (#1A1A2E)").
@@ -50,7 +58,9 @@ STYLE:
 
   const user = `Section: ${section.name}
 
-What it should contain/do: ${section.desc || '(use your judgement based on the section name and tokens)'}
+What it should contain/do: ${section.desc || '(use your judgement based on the section name, industry, and tokens)'}
+
+Industry / product context: ${industryText || '(none given — stay industry-agnostic)'}
 
 Brand tokens (use ONLY these — do not invent others)${tokenText ? ` [${tokenNameList}]` : ''}:
 ${tokenText || '(none given — keep it token-agnostic, describe structurally instead of inventing values)'}
@@ -62,7 +72,7 @@ Target device: ${res.device} — ${res.w} × ${res.h}px
 
 Audit/reference notes: ${notes || '(none)'}
 
-Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token, the font pairing, and the target resolution above must appear by exact name/value somewhere in the output.`;
+Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token, the font pairing, the target resolution, and the industry context above must meaningfully shape the output.`;
 
   return { system, user };
 }
@@ -72,12 +82,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { section, tokens, fontPair, resolution, notes } = req.body || {};
+  const { section, tokens, fontPair, resolution, industry, notes } = req.body || {};
   if (!section || !section.name) {
     return res.status(400).json({ error: "Missing 'section' in request body" });
   }
 
-  const { system, user } = buildPrompt({ section, tokens, fontPair, resolution, notes });
+  const { system, user } = buildPrompt({ section, tokens, fontPair, resolution, industry, notes });
 
   const model = "gemini-flash-latest";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
