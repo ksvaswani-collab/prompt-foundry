@@ -24,8 +24,8 @@ workflow you already use manually for client audits.
 3. In the Vercel project's **Settings → Environment Variables**, add:
    - `GEMINI_API_KEY` = your Gemini API key (get one free, no credit card, at https://aistudio.google.com/apikey)
 4. Deploy. Vercel automatically detects `api/generate.js` as a serverless function,
-   and `vercel.json` tells it to run `npm run build:css` first so `styles.css` is
-   generated fresh on every deploy — no manual config needed.
+   and `vercel.json` tells it to run `npm run build` (Vite) and serve the `dist/`
+   folder it produces — no manual config needed.
 
 ## Getting a free Gemini API key
 1. Go to https://aistudio.google.com/apikey
@@ -49,23 +49,23 @@ exports.handler = async (event) => {
 Then set `GEMINI_API_KEY` under Site settings → Environment variables, and
 update the frontend fetch URL from `/api/generate` to `/.netlify/functions/generate`.
 
-## Styling: Tailwind CSS
-Styles live in `src/input.css` (Tailwind v4, using a `@theme` block for the color/font
-tokens and `@layer components` for reusable classes like `.field`, `.out-card`, `.chip`,
-etc.) and compile down to a single `styles.css` that `index.html` links to. `styles.css`
-is a generated file — it's gitignored and rebuilt automatically:
-- **On Vercel**, `vercel.json` runs `npm run build:css` on every deploy.
-- **Locally**, run `npm run build:css` once, or `npm run dev:css` to watch and
-  rebuild automatically while you edit.
+## Frontend: React + Vite + Tailwind
+The UI is built with React (components in `src/components/`), bundled by Vite.
+Styling is Tailwind v4, applied via the official `@tailwindcss/vite` plugin —
+`src/input.css` holds the `@theme` design tokens and `@layer components` custom
+classes (`.field`, `.out-card`, `.chip`, etc.), and Vite compiles/injects it
+automatically. There's no separate CSS build step to remember — `npm run build`
+handles everything (React + Tailwind) in one pass, and outputs to `dist/`
+(gitignored, regenerated on every build).
 
 ## Local testing
 ```
 npm install
 npm install -g vercel
-npm run dev:css     # in one terminal — watches src/input.css and rebuilds styles.css
-vercel dev           # in another terminal — serves index.html + the /api functions
+vercel dev
 ```
-Then open the local URL `vercel dev` gives you.
+Then open the local URL `vercel dev` gives you — it runs the Vite dev server
+(with hot reload) and the `/api` serverless functions together.
 
 ## Notes
 - Your API key never touches the browser — it stays in the serverless function.

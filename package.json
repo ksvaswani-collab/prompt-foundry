@@ -6,12 +6,17 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "build:css": "tailwindcss -i src/input.css -o styles.css --minify",
-    "dev:css": "tailwindcss -i src/input.css -o styles.css --watch",
-    "vercel-build": "npm run build:css"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.3.2",
-    "tailwindcss": "^4.3.2"
+    "@tailwindcss/vite": "^4.3.2",
+    "@vitejs/plugin-react": "^6.0.3",
+    "tailwindcss": "^4.3.2",
+    "vite": "^8.1.4"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   }
 }
