@@ -23,8 +23,9 @@ workflow you already use manually for client audits.
 2. Go to https://vercel.com/new and import that repo.
 3. In the Vercel project's **Settings → Environment Variables**, add:
    - `GEMINI_API_KEY` = your Gemini API key (get one free, no credit card, at https://aistudio.google.com/apikey)
-4. Deploy. Vercel automatically detects `api/generate.js` as a serverless function —
-   no other config needed.
+4. Deploy. Vercel automatically detects `api/generate.js` as a serverless function,
+   and `vercel.json` tells it to run `npm run build:css` first so `styles.css` is
+   generated fresh on every deploy — no manual config needed.
 
 ## Getting a free Gemini API key
 1. Go to https://aistudio.google.com/apikey
@@ -48,12 +49,23 @@ exports.handler = async (event) => {
 Then set `GEMINI_API_KEY` under Site settings → Environment variables, and
 update the frontend fetch URL from `/api/generate` to `/.netlify/functions/generate`.
 
+## Styling: Tailwind CSS
+Styles live in `src/input.css` (Tailwind v4, using a `@theme` block for the color/font
+tokens and `@layer components` for reusable classes like `.field`, `.out-card`, `.chip`,
+etc.) and compile down to a single `styles.css` that `index.html` links to. `styles.css`
+is a generated file — it's gitignored and rebuilt automatically:
+- **On Vercel**, `vercel.json` runs `npm run build:css` on every deploy.
+- **Locally**, run `npm run build:css` once, or `npm run dev:css` to watch and
+  rebuild automatically while you edit.
+
 ## Local testing
 ```
+npm install
 npm install -g vercel
-vercel dev
+npm run dev:css     # in one terminal — watches src/input.css and rebuilds styles.css
+vercel dev           # in another terminal — serves index.html + the /api functions
 ```
-Then open the local URL it gives you.
+Then open the local URL `vercel dev` gives you.
 
 ## Notes
 - Your API key never touches the browser — it stays in the serverless function.

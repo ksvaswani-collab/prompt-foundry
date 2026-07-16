@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   THEME — every color/font used across the app, named so Tailwind
+   generates matching utilities (bg-panel, text-cyan, font-heading…)
+   --------------------------------------------------------------- */
+@theme {
+  --color-ink: #0F2440;
+  --color-panel: #16304F;
+  --color-panel-2: #1C3A5E;
+  --color-cyan: #5EC8D8;
+  --color-amber: #E8A33D;
+  --color-mint: #7FE0C4;
+  --color-paper: #EAF2F5;
+  --color-muted: #8CA3B8;
+  --color-line: rgba(94, 200, 216, 0.18);
+  --color-err: #E88686;
+
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* ---------------------------------------------------------------
+   BASE — page-level styles that apply once, not per-component
+   --------------------------------------------------------------- */
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 28px;
+    color: var(--color-paper);
+    font-family: var(--font-body);
+    background:
+      linear-gradient(var(--color-line) 1px, transparent 1px) 0 0/32px 32px,
+      linear-gradient(90deg, var(--color-line) 1px, transparent 1px) 0 0/32px 32px,
+      var(--color-ink);
+  }
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* ---------------------------------------------------------------
+   COMPONENTS — every repeated class from the old <style> block,
+   rebuilt with @apply so index.html markup stays readable.
+   --------------------------------------------------------------- */
+@layer components {
+  /* form fields shared by input / textarea / select */
+  .field {
+    @apply w-full rounded-[3px] border border-line bg-panel-2 px-2.5 py-2 font-mono text-[13px] text-paper placeholder-muted placeholder:opacity-70;
+  }
+  /* combine with .field in markup: class="field field-textarea" */
+  .field-textarea {
+    @apply font-body resize-y min-h-[80px];
+  }
+  /* combine with .field in markup: class="field field-select" */
+  .field-select {
+    @apply cursor-pointer appearance-none pr-[30px];
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--color-muted) 50%),
+      linear-gradient(135deg, var(--color-muted) 50%, transparent 50%);
+    background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .panel-heading {
+    @apply m-0 mb-3.5 font-heading text-[13px] uppercase tracking-[0.12em] text-cyan;
+  }
+
+  .icon-btn {
+    @apply w-[34px] flex-none cursor-pointer rounded-[3px] border border-line bg-transparent text-base text-muted hover:border-amber hover:text-amber;
+  }
+  .add-link {
+    @apply cursor-pointer border-none bg-transparent py-1 text-left font-mono text-xs text-mint hover:text-cyan;
+  }
+  .section-block {
+    @apply mb-2.5 rounded-[3px] border border-dashed border-line p-2.5;
+  }
+  .divider {
+    @apply my-[18px] h-px bg-line;
+  }
+
+  .generate-btn {
+    @apply mt-2 w-full cursor-pointer rounded-[3px] border-none bg-amber p-3 font-heading text-sm font-bold tracking-wide text-ink hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* resolution pills */
+  .res-pill {
+    @apply cursor-pointer rounded-[3px] border border-line bg-panel-2 px-2.5 py-2 text-left font-mono text-[13px] leading-relaxed text-muted;
+  }
+  .res-pill.active {
+    @apply border-amber text-amber;
+  }
+  .res-pill .device {
+    @apply block font-mono text-[11px] uppercase tracking-wide text-muted;
+  }
+  .res-pill.active .device {
+    @apply text-amber;
+  }
+  .res-grid {
+    @apply grid grid-cols-2 gap-2;
+  }
+
+  /* light/dark mode switch */
+  .mode-switch-row {
+    @apply flex items-center gap-3;
+  }
+  .mode-switch {
+    @apply relative h-7 w-[52px] flex-none cursor-pointer rounded-full border border-line bg-panel-2 transition-colors duration-200;
+  }
+  .mode-switch.dark {
+    @apply border-amber bg-ink;
+  }
+  .mode-switch .thumb {
+    @apply absolute left-0.5 top-0.5 h-[22px] w-[22px] rounded-full bg-cyan transition-all duration-200;
+  }
+  .mode-switch.dark .thumb {
+    @apply left-[26px] bg-amber;
+  }
+  .mode-switch-label {
+    @apply font-mono text-[12.5px] text-paper;
+  }
+
+  /* font live preview */
+  .font-preview {
+    @apply flex-1 overflow-hidden rounded-[3px] border border-line bg-panel-2 px-3 py-2.5;
+  }
+  .preview-label {
+    @apply mb-1.5 block font-mono text-xs uppercase tracking-wide text-muted;
+  }
+  .preview-text {
+    @apply block overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-[1.3] text-paper;
+  }
+
+  /* output "spec sheet" */
+  .sheet {
+    @apply relative min-h-[300px] rounded-[4px] border border-line bg-panel p-[22px];
+  }
+  .crop {
+    @apply absolute h-3.5 w-3.5 border-cyan/60;
+  }
+  /* combine with .crop in markup: class="crop crop-tl" (etc.) */
+  .crop-tl {
+    @apply left-2 top-2 border-l-2 border-t-2;
+  }
+  .crop-tr {
+    @apply right-2 top-2 border-r-2 border-t-2;
+  }
+  .crop-bl {
+    @apply bottom-2 left-2 border-b-2 border-l-2;
+  }
+  .crop-br {
+    @apply bottom-2 right-2 border-b-2 border-r-2;
+  }
+  .empty-state {
+    @apply px-5 py-[60px] text-center font-mono text-[13px] text-muted;
+  }
+  .stamp {
+    @apply mb-3.5 inline-block -rotate-2 rounded-[2px] border-[1.5px] border-amber px-2 py-[3px] font-heading text-[11px] font-bold tracking-[0.14em] text-amber;
+  }
+  .out-card {
+    @apply mb-3.5 rounded-[3px] border border-line bg-panel-2 px-4 py-3.5;
+  }
+  .out-card h3 {
+    @apply m-0 mb-2 flex items-center justify-between font-heading text-sm text-paper;
+  }
+  .copy-btn {
+    @apply cursor-pointer rounded-[2px] border border-line bg-transparent px-2 py-[3px] font-mono text-[13px] text-mint hover:border-mint;
+  }
+  .out-text {
+    @apply whitespace-pre-wrap font-body text-[13.5px] leading-[1.6] text-paper;
+  }
+  .tokens-used {
+    @apply mt-2.5 flex flex-wrap gap-1.5;
+  }
+  .chip {
+    @apply rounded-[2px] border border-mint/35 px-1.5 py-0.5 font-mono text-xs text-mint;
+  }
+  .loading {
+    @apply font-mono text-[12.5px] text-muted;
+  }
+  .err {
+    @apply font-mono text-xs text-err;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Small bits that don't fit @apply cleanly (pseudo-content, keyframes)
+   --------------------------------------------------------------- */
+.loading::after {
+  content: '';
+  animation: dots 1.2s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}

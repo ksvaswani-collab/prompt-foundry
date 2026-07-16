@@ -5,6 +5,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "build:css": "tailwindcss -i src/input.css -o styles.css --minify",
+    "dev:css": "tailwindcss -i src/input.css -o styles.css --watch",
+    "vercel-build": "npm run build:css"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.2",
+    "tailwindcss": "^4.3.2"
   }
 }
