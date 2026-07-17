@@ -100,7 +100,7 @@
     @apply pointer-events-none opacity-50;
   }
   .img-hint {
-    @apply mt-1 font-mono text-[10px] text-muted;
+    @apply mt-1 font-mono text-[12px] text-muted;
   }
   .divider {
     @apply my-[18px] h-px bg-line;
@@ -156,7 +156,7 @@
     @apply flex items-center gap-1.5 font-mono text-[13px];
   }
   .mode-pill-hint {
-    @apply font-mono text-[10.5px] normal-case tracking-normal text-paper/55;
+    @apply font-mono text-[12px] normal-case tracking-normal text-paper/55;
   }
   .mode-pill.active .mode-pill-hint {
     @apply text-amber;
