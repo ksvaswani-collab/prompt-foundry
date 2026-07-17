@@ -2,11 +2,11 @@
 // (so an in-flight request can actually be cancelled) and also honor it
 // during the 429 backoff wait (so cancelling doesn't have to wait out a
 // multi-second retry delay first).
-export async function generateSection({ section, tokens, fontPair, resolution, industry, mode, notes }, signal, retries = 3) {
+export async function generateSection({ section, tokens, fontPair, resolution, industry, mode, notes, images }, signal, retries = 3) {
   const resp = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ section, tokens, fontPair, resolution, industry, mode, notes }),
+    body: JSON.stringify({ section, tokens, fontPair, resolution, industry, mode, notes, images }),
     signal,
   });
 
@@ -23,7 +23,7 @@ export async function generateSection({ section, tokens, fontPair, resolution, i
         { once: true }
       );
     });
-    return generateSection({ section, tokens, fontPair, resolution, industry, mode, notes }, signal, retries - 1);
+    return generateSection({ section, tokens, fontPair, resolution, industry, mode, notes, images }, signal, retries - 1);
   }
 
   if (!resp.ok) {

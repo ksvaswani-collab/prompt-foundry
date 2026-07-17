@@ -79,6 +79,29 @@
   .section-block {
     @apply mb-2.5 rounded-[3px] border border-dashed border-line p-2.5;
   }
+
+  /* reference-image thumbnail strip */
+  .img-row {
+    @apply mt-2 flex flex-wrap gap-1.5;
+  }
+  .thumb {
+    @apply relative h-[52px] w-[52px] flex-none overflow-hidden rounded-[3px] border border-line;
+  }
+  .thumb img {
+    @apply block h-full w-full object-cover;
+  }
+  .thumb-remove {
+    @apply absolute right-0 top-0 flex h-4 w-4 cursor-pointer items-center justify-center border-none bg-ink/85 p-0 text-paper hover:text-amber;
+  }
+  .thumb-add {
+    @apply flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[3px] border border-dashed border-line text-muted hover:border-amber hover:text-amber;
+  }
+  .thumb-add-disabled {
+    @apply pointer-events-none opacity-50;
+  }
+  .img-hint {
+    @apply mt-1 font-mono text-[10px] text-muted;
+  }
   .divider {
     @apply my-[18px] h-px bg-line;
   }

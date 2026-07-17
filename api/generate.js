@@ -48,7 +48,7 @@ const APPEARANCE_LABELS = {
   auto: 'auto (model infers light or dark from context)',
 };
 
-function buildPrompt({ section, tokens, fontPair, resolution, industry, mode, notes }) {
+function buildPrompt({ section, tokens, fontPair, resolution, industry, mode, notes, hasImages }) {
   const validTokens = (tokens || []).filter(t => t.name || t.value);
   const tokenText = validTokens
     .map(t => `- ${t.name || '(unnamed)'}: ${t.value || '(no value given)'}`)
@@ -68,6 +68,16 @@ function buildPrompt({ section, tokens, fontPair, resolution, industry, mode, no
   const industryText = (industry || '').trim();
   const appearanceMode = ['light', 'dark', 'both', 'auto'].includes(mode) ? mode : 'light';
   const appearanceLabel = APPEARANCE_LABELS[appearanceMode];
+
+  const imageRules = hasImages
+    ? `
+
+REFERENCE IMAGES:
+- One or more reference screenshots are attached for this section. Study their layout structure, spacing rhythm, visual hierarchy, component states, and general style approach.
+- Translate what you observe into concrete, literal instructions expressed using the brand tokens, font pairing, and resolution given above. Do NOT invent new colors or fonts because you saw them in the image — brand tokens and the font pairing always take priority over anything visual in the reference.
+- Do NOT describe the image itself or say things like "as shown in the reference image" or "similar to the attached screenshot" — the output is a standalone prompt for a tool that cannot see the reference. Write the layout/style logic directly as if it were your own design decision.
+- If multiple images are attached, treat them as a small mood/pattern set — synthesize the shared logic across them rather than describing each one separately.`
+    : '';
 
   const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. The person deliberately gives you SHORT, sparse input (a section name, a couple lines of intent, a short token list) and expects you to expand it into a long, rich, fully-specified prompt — you are the one doing the elaboration, not them. Rules:
 
@@ -98,7 +108,7 @@ VIEWPORT:
 
 STYLE:
 - Actively avoid generic AI-design clichés: no default gradient-hero, no meaningless numbered badges (01/02/03) unless the content is a real sequence, no stock-photo language, no filler copy like "unlock your potential."
-- Output ONLY the prompt text for this one section. No headers, no preamble, no markdown, no meta-commentary about what you're doing.`;
+- Output ONLY the prompt text for this one section. No headers, no preamble, no markdown, no meta-commentary about what you're doing.${imageRules}`;
 
   const user = `Section: ${section.name}
 
@@ -116,34 +126,55 @@ ${fontLine}
 
 Target device: ${res.device} — ${res.w} × ${res.h}px
 
-Audit/reference notes: ${notes || '(none)'}
+Audit/reference notes: ${notes || '(none)'}${hasImages ? '\n\n(Reference screenshots are attached to this request — see system instructions on how to use them.)' : ''}
 
 Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token, the font pairing, the target resolution, the industry context, and the ${appearanceLabel} appearance mode above must meaningfully shape the output.`;
 
   return { system, user };
 }
 
+const MAX_IMAGES = 4;
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { section, tokens, fontPair, resolution, industry, mode, notes } = req.body || {};
+  const { section, tokens, fontPair, resolution, industry, mode, notes, images } = req.body || {};
   if (!section || !section.name) {
     return res.status(400).json({ error: "Missing 'section' in request body" });
   }
 
-  const { system, user } = buildPrompt({ section, tokens, fontPair, resolution, industry, mode, notes });
+  const cleanImages = Array.isArray(images)
+    ? images.filter((img) => img && img.data && img.mimeType).slice(0, MAX_IMAGES)
+    : [];
+
+  const { system, user } = buildPrompt({
+    section,
+    tokens,
+    fontPair,
+    resolution,
+    industry,
+    mode,
+    notes,
+    hasImages: cleanImages.length > 0,
+  });
 
   const model = "gemini-flash-latest";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
+  // Text prompt first, then any reference images as inline vision parts.
+  const parts = [{ text: user }];
+  for (const img of cleanImages) {
+    parts.push({ inline_data: { mime_type: img.mimeType, data: img.data } });
+  }
 
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: user }] }],
+        contents: [{ role: "user", parts }],
         systemInstruction: { parts: [{ text: system }] },
         generationConfig: { maxOutputTokens: 3000, temperature: 0.9 },
       }),

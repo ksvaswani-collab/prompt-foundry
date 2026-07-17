@@ -26,3 +26,5 @@ export const APPEARANCE_MODES = [
   { id: 'both', label: 'Both', hint: 'one prompt, dual-theme' },
   { id: 'auto', label: 'Auto', hint: 'model infers from tokens' },
 ];
+
+export const MAX_IMAGES_PER_SECTION = 4;

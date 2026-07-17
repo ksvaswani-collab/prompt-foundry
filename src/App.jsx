@@ -32,7 +32,11 @@ export default function App() {
   const [fontPair, setFontPair] = useLocalStorage('promptFoundry.fontPair', { heading: '', body: '' });
   const [colorMode, setColorMode] = useLocalStorage('promptFoundry.colorMode', 'light');
   const [selectedRes, setSelectedRes] = useLocalStorage('promptFoundry.selectedRes', 'd1440');
-  const [sections, setSections] = useLocalStorage('promptFoundry.sections', [{ name: 'Hero', desc: '' }]);
+  const [sections, setSections] = useLocalStorage(
+    'promptFoundry.sections',
+    [{ name: 'Hero', desc: '', images: [] }],
+    (list) => (Array.isArray(list) ? list.map((s) => ({ images: [], ...s })) : list)
+  );
   const [notes, setNotes] = useLocalStorage('promptFoundry.notes', '');
   const [showAdvanced, setShowAdvanced] = useLocalStorage('promptFoundry.showAdvanced', false);
 
@@ -69,13 +73,14 @@ export default function App() {
   if (!hasFonts) validationMsgs.push('no font pairing chosen');
 
   // Runs one section (index `i` in `results`) against the API and writes the
-  // outcome back into `results[i]`. `sectionInfo` (name/desc) is passed in
-  // explicitly rather than re-read from the live `sections` form state, so
-  // that regenerating a card later always uses *that card's own* name/desc
-  // — even if you've since edited the section list — instead of silently
-  // drifting to whatever the form currently says.
+  // outcome back into `results[i]`. `sectionInfo` (name/desc/images) is
+  // passed in explicitly rather than re-read from the live `sections` form
+  // state, so that regenerating a card later always uses *that card's own*
+  // name/desc/images — even if you've since edited the section list —
+  // instead of silently drifting to whatever the form currently says.
   async function runSection(i, sectionInfo, controller) {
     const res = RESOLUTIONS.find((r) => r.id === selectedRes);
+    const images = sectionInfo.images || [];
     try {
       const text = await generateSection(
         {
@@ -86,6 +91,7 @@ export default function App() {
           industry: resolvedIndustry(industry),
           mode: colorMode,
           notes,
+          images,
         },
         controller.signal
       );
@@ -95,6 +101,7 @@ export default function App() {
         ...used.map((t) => t.name),
         ...(fontPair.heading || fontPair.body ? [`${fontPair.heading || '?'} / ${fontPair.body || '?'}`] : []),
         `${res.device} ${res.w}×${res.h}`,
+        ...(images.length ? [`${images.length} ref image${images.length > 1 ? 's' : ''}`] : []),
       ];
 
       setResults((prev) =>
@@ -122,7 +129,7 @@ export default function App() {
     abortControllerRef.current = controller;
     setIsGenerating(true);
     setOutputStatus('generating');
-    setResults(validSections.map((s) => ({ name: s.name, desc: s.desc, status: 'queued' })));
+    setResults(validSections.map((s) => ({ name: s.name, desc: s.desc, images: s.images, status: 'queued' })));
 
     for (let i = 0; i < validSections.length; i++) {
       if (controller.signal.aborted) {
@@ -132,7 +139,7 @@ export default function App() {
         continue;
       }
       setResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, status: 'loading' } : r)));
-      await runSection(i, { name: validSections[i].name, desc: validSections[i].desc }, controller);
+      await runSection(i, { name: validSections[i].name, desc: validSections[i].desc, images: validSections[i].images }, controller);
       if (i < validSections.length - 1 && !controller.signal.aborted) {
         await sleepAbortable(1500, controller.signal);
       }
@@ -163,10 +170,10 @@ export default function App() {
     abortControllerRef.current = controller;
     setIsGenerating(true);
     setResults((prev) =>
-      prev.map((r, idx) => (idx === i ? { name: r.name, desc: r.desc, status: 'loading' } : r))
+      prev.map((r, idx) => (idx === i ? { name: r.name, desc: r.desc, images: r.images, status: 'loading' } : r))
     );
 
-    await runSection(i, { name: target.name, desc: target.desc }, controller);
+    await runSection(i, { name: target.name, desc: target.desc, images: target.images }, controller);
 
     setIsGenerating(false);
     abortControllerRef.current = null;
