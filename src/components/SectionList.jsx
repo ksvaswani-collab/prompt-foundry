@@ -1,4 +1,4 @@
-export default function SectionList({ sections, onChange }) {
+export default function SectionList({ sections, onChange, disabled }) {
   function updateSection(i, field, value) {
     const next = sections.map((s, idx) => (idx === i ? { ...s, [field]: value } : s));
     onChange(next);
@@ -20,18 +20,20 @@ export default function SectionList({ sections, onChange }) {
               placeholder="section name (e.g. Pricing card)"
               value={s.name}
               onChange={(e) => updateSection(i, 'name', e.target.value)}
+              disabled={disabled}
             />
-            <button className="icon-btn" onClick={() => removeSection(i)}>×</button>
+            <button className="icon-btn" onClick={() => removeSection(i)} disabled={disabled}>×</button>
           </div>
           <textarea
             className="field field-textarea"
             placeholder="what it should contain / do"
             value={s.desc}
             onChange={(e) => updateSection(i, 'desc', e.target.value)}
+            disabled={disabled}
           />
         </div>
       ))}
-      <button className="add-link" onClick={addSection}>+ add section</button>
+      <button className="add-link" onClick={addSection} disabled={disabled}>+ add section</button>
     </div>
   );
 }

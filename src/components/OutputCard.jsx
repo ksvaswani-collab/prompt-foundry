@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 
-export default function OutputCard({ name, status, text, error, chips, onEdit }) {
+export default function OutputCard({ name, status, text, error, chips, onEdit, onRegenerate }) {
   const textareaRef = useRef(null);
 
   // Auto-grow the textarea to hug its content (no scrollbar, no fixed box,
@@ -29,9 +29,6 @@ export default function OutputCard({ name, status, text, error, chips, onEdit })
     resize();
 
     const ro = new ResizeObserver(() => {
-      // Defer to the next frame so we're not fighting the observer's own
-      // reflow (setting height triggers another resize event — this keeps
-      // it from looping or throwing "ResizeObserver loop" warnings).
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(resize);
     });
@@ -62,12 +59,24 @@ export default function OutputCard({ name, status, text, error, chips, onEdit })
     <div className="out-card">
       <h3>
         {name}
-        {status === 'done' && (
-          <button className="copy-btn" onClick={copyText}>copy</button>
-        )}
+        <span className="out-card-actions">
+          {(status === 'done' || status === 'error' || status === 'cancelled') && (
+            <button className="copy-btn regen-btn" onClick={onRegenerate} title="regenerate just this section">
+              ↻ {status === 'done' ? 'regenerate' : 'retry'}
+            </button>
+          )}
+          {status === 'done' && (
+            <button className="copy-btn" onClick={copyText}>copy</button>
+          )}
+        </span>
       </h3>
-      {status === 'loading' && <div className="loading">generating</div>}
+
+      {(status === 'loading' || status === 'queued') && (
+        <div className="loading">{status === 'queued' ? 'queued' : 'generating'}</div>
+      )}
+      {status === 'cancelled' && <div className="cancelled-note">Cancelled before this section ran.</div>}
       {status === 'error' && <div className="err">{error}</div>}
+
       {status === 'done' && (
         <>
           <textarea

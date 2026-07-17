@@ -1,6 +1,6 @@
 import OutputCard from './OutputCard';
 
-export default function OutputPanel({ status, results, onEditResult }) {
+export default function OutputPanel({ status, results, onEditResult, onRegenerate }) {
   return (
     <div className="sheet">
       <div className="crop crop-tl"></div><div className="crop crop-tr"></div>
@@ -19,7 +19,12 @@ export default function OutputPanel({ status, results, onEditResult }) {
             {status === 'generating' ? 'IN PROGRESS' : 'READY TO PASTE'}
           </div>
           {results.map((r, i) => (
-            <OutputCard key={i} {...r} onEdit={(val) => onEditResult(i, val)} />
+            <OutputCard
+              key={i}
+              {...r}
+              onEdit={(val) => onEditResult(i, val)}
+              onRegenerate={() => onRegenerate(i)}
+            />
           ))}
         </>
       )}

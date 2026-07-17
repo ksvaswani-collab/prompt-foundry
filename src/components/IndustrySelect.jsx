@@ -1,6 +1,6 @@
 import { INDUSTRIES } from '../constants';
 
-export default function IndustrySelect({ industry, onChange }) {
+export default function IndustrySelect({ industry, onChange, disabled }) {
   function handlePresetChange(val) {
     onChange({
       preset: val,
@@ -14,6 +14,7 @@ export default function IndustrySelect({ industry, onChange }) {
         className="field field-select"
         value={industry.preset}
         onChange={(e) => handlePresetChange(e.target.value)}
+        disabled={disabled}
       >
         <option value="" disabled>Choose an industry…</option>
         {INDUSTRIES.map((i) => (
@@ -27,6 +28,7 @@ export default function IndustrySelect({ industry, onChange }) {
           value={industry.custom}
           autoFocus
           onChange={(e) => onChange({ ...industry, custom: e.target.value })}
+          disabled={disabled}
         />
       )}
     </div>

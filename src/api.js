@@ -1,14 +1,29 @@
-export async function generateSection({ section, tokens, fontPair, resolution, industry, mode, notes }, retries = 3) {
+// `signal` is a standard AbortController signal — pass it through to fetch
+// (so an in-flight request can actually be cancelled) and also honor it
+// during the 429 backoff wait (so cancelling doesn't have to wait out a
+// multi-second retry delay first).
+export async function generateSection({ section, tokens, fontPair, resolution, industry, mode, notes }, signal, retries = 3) {
   const resp = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ section, tokens, fontPair, resolution, industry, mode, notes }),
+    signal,
   });
 
   if (resp.status === 429 && retries > 0) {
     const wait = [2000, 5000, 10000][3 - retries];
-    await new Promise(r => setTimeout(r, wait));
-    return generateSection({ section, tokens, fontPair, resolution, industry, mode, notes }, retries - 1);
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(resolve, wait);
+      signal.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(t);
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+        },
+        { once: true }
+      );
+    });
+    return generateSection({ section, tokens, fontPair, resolution, industry, mode, notes }, signal, retries - 1);
   }
 
   if (!resp.ok) {

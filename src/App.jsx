@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import IndustrySelect, { resolvedIndustry } from './components/IndustrySelect';
 import TokenList from './components/TokenList';
 import FontPairPicker from './components/FontPairPicker';
@@ -10,6 +10,15 @@ import { RESOLUTIONS } from './constants';
 import { generateSection } from './api';
 import { detectTokensUsed } from './tokenMatch';
 import { useLocalStorage } from './hooks/useLocalStorage';
+
+// Waits `ms`, but resolves early (without rejecting) if `signal` aborts —
+// used for the pause between sections so Stop doesn't have to wait it out.
+function sleepAbortable(ms, signal) {
+  return new Promise((resolve) => {
+    const t = setTimeout(resolve, ms);
+    signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+  });
+}
 
 export default function App() {
   // Every field below is persisted to the browser's local storage (per field,
@@ -41,8 +50,8 @@ export default function App() {
     (list) =>
       Array.isArray(list)
         ? list.map((r) =>
-            r.status === 'loading'
-              ? { ...r, status: 'error', error: 'Interrupted by a page reload — click Generate again.' }
+            r.status === 'loading' || r.status === 'queued'
+              ? { ...r, status: 'error', error: 'Interrupted by a page reload — click retry.' }
               : r
           )
         : []
@@ -50,12 +59,56 @@ export default function App() {
   // Purely transient — tied to the current in-flight request, not something
   // that should (or safely can) survive a reload.
   const [isGenerating, setIsGenerating] = useState(false);
+  const abortControllerRef = useRef(null);
 
   const hasTokens = tokens.some((t) => (t.name && t.name.trim()) || (t.value && t.value.trim()));
   const hasFonts = !!(fontPair.heading && fontPair.body);
   const validationMsgs = [];
   if (!hasTokens) validationMsgs.push('no brand tokens set');
   if (!hasFonts) validationMsgs.push('no font pairing chosen');
+
+  // Runs one section (index `i` in `results`) against the API and writes the
+  // outcome back into `results[i]`. `sectionInfo` (name/desc) is passed in
+  // explicitly rather than re-read from the live `sections` form state, so
+  // that regenerating a card later always uses *that card's own* name/desc
+  // — even if you've since edited the section list — instead of silently
+  // drifting to whatever the form currently says.
+  async function runSection(i, sectionInfo, controller) {
+    const res = RESOLUTIONS.find((r) => r.id === selectedRes);
+    try {
+      const text = await generateSection(
+        {
+          section: { name: sectionInfo.name, desc: sectionInfo.desc },
+          tokens,
+          fontPair,
+          resolution: res,
+          industry: resolvedIndustry(industry),
+          mode: colorMode,
+          notes,
+        },
+        controller.signal
+      );
+
+      const used = detectTokensUsed(text, tokens);
+      const chips = [
+        ...used.map((t) => t.name),
+        ...(fontPair.heading || fontPair.body ? [`${fontPair.heading || '?'} / ${fontPair.body || '?'}`] : []),
+        `${res.device} ${res.w}×${res.h}`,
+      ];
+
+      setResults((prev) =>
+        prev.map((r, idx) => (idx === i ? { ...sectionInfo, status: 'done', text, chips } : r))
+      );
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        setResults((prev) => prev.map((r, idx) => (idx === i ? { ...sectionInfo, status: 'cancelled' } : r)));
+      } else {
+        setResults((prev) =>
+          prev.map((r, idx) => (idx === i ? { ...sectionInfo, status: 'error', error: e.message } : r))
+        );
+      }
+    }
+  }
 
   async function generateAll() {
     const validSections = sections.filter((s) => s.name.trim());
@@ -64,43 +117,58 @@ export default function App() {
       return;
     }
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setIsGenerating(true);
     setOutputStatus('generating');
-    setResults(validSections.map((s) => ({ name: s.name, status: 'loading' })));
-
-    const res = RESOLUTIONS.find((r) => r.id === selectedRes);
+    setResults(validSections.map((s) => ({ name: s.name, desc: s.desc, status: 'queued' })));
 
     for (let i = 0; i < validSections.length; i++) {
-      try {
-        const text = await generateSection({
-          section: validSections[i],
-          tokens,
-          fontPair,
-          resolution: res,
-          industry: resolvedIndustry(industry),
-          mode: colorMode,
-          notes,
-        });
-
-        const used = detectTokensUsed(text, tokens);
-        const chips = [
-          ...used.map((t) => t.name),
-          ...(fontPair.heading || fontPair.body ? [`${fontPair.heading || '?'} / ${fontPair.body || '?'}`] : []),
-          `${res.device} ${res.w}×${res.h}`,
-        ];
-
-        setResults((prev) => prev.map((r, idx) => (idx === i ? { name: validSections[i].name, status: 'done', text, chips } : r)));
-      } catch (e) {
-        setResults((prev) => prev.map((r, idx) => (idx === i ? { name: validSections[i].name, status: 'error', error: e.message } : r)));
+      if (controller.signal.aborted) {
+        setResults((prev) =>
+          prev.map((r, idx) => (idx === i && r.status === 'queued' ? { ...r, status: 'cancelled' } : r))
+        );
+        continue;
       }
-
-      if (i < validSections.length - 1) {
-        await new Promise((r) => setTimeout(r, 1500));
+      setResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, status: 'loading' } : r)));
+      await runSection(i, { name: validSections[i].name, desc: validSections[i].desc }, controller);
+      if (i < validSections.length - 1 && !controller.signal.aborted) {
+        await sleepAbortable(1500, controller.signal);
       }
     }
 
     setOutputStatus('ready');
     setIsGenerating(false);
+    abortControllerRef.current = null;
+  }
+
+  // Cancels the in-flight request immediately. Sections already finished
+  // stay exactly as they are; any still-queued sections are marked
+  // "cancelled" (each gets its own retry button) instead of silently
+  // vanishing or being left in a permanent "loading" state.
+  function stopGeneration() {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    setResults((prev) => prev.map((r) => (r.status === 'queued' ? { ...r, status: 'cancelled' } : r)));
+  }
+
+  // Re-runs just one card — cancelled, errored, or already-done — without
+  // touching any of the others or re-running the whole batch.
+  async function regenerateSection(i) {
+    if (isGenerating) return;
+    const target = results[i];
+    if (!target) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setIsGenerating(true);
+    setResults((prev) =>
+      prev.map((r, idx) => (idx === i ? { name: r.name, desc: r.desc, status: 'loading' } : r))
+    );
+
+    await runSection(i, { name: target.name, desc: target.desc }, controller);
+
+    setIsGenerating(false);
+    abortControllerRef.current = null;
   }
 
   function editResultText(i, val) {
@@ -122,49 +190,66 @@ export default function App() {
 
       <div className="grid grid-cols-[1fr_1.15fr] gap-5 max-[880px]:grid-cols-1">
         <div className="h-fit rounded border border-line bg-panel p-5">
-          <h2 className="panel-heading">00 — Industry / context</h2>
-          <IndustrySelect industry={industry} onChange={setIndustry} />
+          <div className={`panel-fields${isGenerating ? ' panel-fields-locked' : ''}`}>
+            <h2 className="panel-heading">00 — Industry / context</h2>
+            <IndustrySelect industry={industry} onChange={setIndustry} disabled={isGenerating} />
 
-          <div className="divider"></div>
-          <h2 className="panel-heading">01 — Brand tokens</h2>
-          <TokenList tokens={tokens} onChange={setTokens} />
+            <div className="divider"></div>
+            <h2 className="panel-heading">01 — Brand tokens</h2>
+            <TokenList tokens={tokens} onChange={setTokens} disabled={isGenerating} />
 
-          <div className="divider"></div>
-          <h2 className="panel-heading">Font pairing</h2>
-          <FontPairPicker fontPair={fontPair} onChange={setFontPair} />
+            <div className="divider"></div>
+            <h2 className="panel-heading">Font pairing</h2>
+            <FontPairPicker fontPair={fontPair} onChange={setFontPair} disabled={isGenerating} />
 
-          <div className="divider"></div>
-          <h2 className="panel-heading">Appearance mode</h2>
-          <ModeToggle colorMode={colorMode} onChange={setColorMode} />
+            <div className="divider"></div>
+            <h2 className="panel-heading">Appearance mode</h2>
+            <ModeToggle colorMode={colorMode} onChange={setColorMode} disabled={isGenerating} />
 
-          <div className="divider"></div>
-          <h2 className="panel-heading">Target resolution</h2>
-          <ResolutionPicker selectedRes={selectedRes} onChange={setSelectedRes} />
+            <div className="divider"></div>
+            <h2 className="panel-heading">Target resolution</h2>
+            <ResolutionPicker selectedRes={selectedRes} onChange={setSelectedRes} disabled={isGenerating} />
 
-          <div className="divider"></div>
-          <h2 className="panel-heading">02 — Sections to generate</h2>
-          <SectionList sections={sections} onChange={setSections} />
+            <div className="divider"></div>
+            <h2 className="panel-heading">02 — Sections to generate</h2>
+            <SectionList sections={sections} onChange={setSections} disabled={isGenerating} />
 
-          <div className="divider"></div>
-          <h2 className="panel-heading">03 — Audit / reference notes (optional)</h2>
-          <textarea
-            className="field field-textarea"
-            placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
+            <div className="divider"></div>
+            <h2 className="panel-heading">03 — Audit / reference notes (optional)</h2>
+            <textarea
+              className="field field-textarea"
+              placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isGenerating}
+            />
+          </div>
 
           {validationMsgs.length > 0 && (
             <div className="validation-note">
               Heads up: {validationMsgs.join(' and ')} — output will be generic / token-agnostic.
             </div>
           )}
-          <button className="generate-btn" disabled={isGenerating} onClick={generateAll}>
-            {isGenerating ? 'Generating…' : 'Generate prompts →'}
+          <button
+            className={`generate-btn${isGenerating ? ' stop-mode' : ''}`}
+            onClick={isGenerating ? stopGeneration : generateAll}
+          >
+            {isGenerating ? (
+              <>
+                <span className="spin"></span>Stop generating
+              </>
+            ) : (
+              'Generate prompts →'
+            )}
           </button>
         </div>
 
-        <OutputPanel status={outputStatus} results={results} onEditResult={editResultText} />
+        <OutputPanel
+          status={outputStatus}
+          results={results}
+          onEditResult={editResultText}
+          onRegenerate={regenerateSection}
+        />
       </div>
     </div>
   );

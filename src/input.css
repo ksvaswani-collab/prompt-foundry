@@ -86,6 +86,21 @@
   .generate-btn {
     @apply mt-2 w-full cursor-pointer rounded-[3px] border-none bg-amber p-3 font-heading text-sm font-bold tracking-wide text-ink hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
   }
+  .generate-btn.stop-mode {
+    @apply border border-amber bg-transparent text-amber hover:bg-amber/10;
+  }
+  .spin {
+    @apply mr-1.5 inline-block h-3 w-3 flex-none animate-spin rounded-full border-2 border-amber align-[-2px];
+    border-top-color: transparent;
+  }
+
+  /* dims + disables interaction with the left panel while generating */
+  .panel-fields {
+    @apply transition-opacity duration-150;
+  }
+  .panel-fields-locked {
+    @apply pointer-events-none opacity-45;
+  }
 
   /* resolution pills */
   .res-pill {
@@ -167,8 +182,17 @@
   .out-card h3 {
     @apply m-0 mb-2 flex items-center justify-between font-heading text-sm text-paper;
   }
+  .out-card-actions {
+    @apply flex flex-none gap-1.5;
+  }
   .copy-btn {
     @apply cursor-pointer rounded-[2px] border border-line bg-transparent px-2 py-[3px] font-mono text-[13px] text-mint hover:border-mint;
+  }
+  .regen-btn {
+    @apply text-cyan hover:border-cyan;
+  }
+  .cancelled-note {
+    @apply font-mono text-xs text-muted;
   }
   .out-text {
     @apply whitespace-pre-wrap font-body text-[13.5px] leading-[1.6] text-paper;

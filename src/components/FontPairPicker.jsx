@@ -1,6 +1,6 @@
 import { FONT_OPTIONS } from '../constants';
 
-export default function FontPairPicker({ fontPair, onChange }) {
+export default function FontPairPicker({ fontPair, onChange, disabled }) {
   function setFont(role, value) {
     onChange({ ...fontPair, [role]: value });
   }
@@ -12,6 +12,7 @@ export default function FontPairPicker({ fontPair, onChange }) {
           className="field field-select flex-1"
           value={fontPair.heading}
           onChange={(e) => setFont('heading', e.target.value)}
+          disabled={disabled}
         >
           <option value="" disabled>Choose a font…</option>
           {FONT_OPTIONS.map((f) => (
@@ -22,6 +23,7 @@ export default function FontPairPicker({ fontPair, onChange }) {
           className="field field-select flex-1"
           value={fontPair.body}
           onChange={(e) => setFont('body', e.target.value)}
+          disabled={disabled}
         >
           <option value="" disabled>Choose a font…</option>
           {FONT_OPTIONS.map((f) => (
