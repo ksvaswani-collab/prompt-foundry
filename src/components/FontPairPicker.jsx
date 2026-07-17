@@ -31,24 +31,22 @@ export default function FontPairPicker({ fontPair, onChange, disabled }) {
           ))}
         </select>
       </div>
-      <div className="mb-2 flex gap-2">
-        <div className="font-preview">
-          <span className="preview-label">Heading</span>
-          <span
-            className="preview-text"
-            style={fontPair.heading ? { fontFamily: `'${fontPair.heading}', sans-serif` } : undefined}
-          >
-            {fontPair.heading || 'Select a heading font'}
-          </span>
+
+      {/* One combined preview — a real mock headline + paragraph in the
+          actual pairing, rather than two disconnected boxes (the old
+          "Heading" box just repeated the font name, which wasn't useful). */}
+      <div className="font-preview">
+        <div
+          className="font-preview-heading"
+          style={fontPair.heading ? { fontFamily: `'${fontPair.heading}', sans-serif` } : undefined}
+        >
+          {fontPair.heading ? 'Aa — Heading in this pairing' : 'Select a heading font'}
         </div>
-        <div className="font-preview">
-          <span className="preview-label">Body</span>
-          <span
-            className="preview-text"
-            style={fontPair.body ? { fontFamily: `'${fontPair.body}', sans-serif` } : undefined}
-          >
-            {fontPair.body ? 'The quick brown fox jumps over the lazy dog' : 'Select a body font'}
-          </span>
+        <div
+          className="font-preview-body"
+          style={fontPair.body ? { fontFamily: `'${fontPair.body}', sans-serif` } : undefined}
+        >
+          {fontPair.body ? 'The quick brown fox jumps over the lazy dog.' : 'Select a body font'}
         </div>
       </div>
     </>

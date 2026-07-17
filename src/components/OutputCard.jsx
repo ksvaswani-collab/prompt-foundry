@@ -1,7 +1,9 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 export default function OutputCard({ name, status, text, error, chips, onEdit, onRegenerate }) {
   const textareaRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef(null);
 
   // Auto-grow the textarea to hug its content (no scrollbar, no fixed box,
   // no manual drag-resize) — matches how the old read-only <div> behaved.
@@ -44,8 +46,19 @@ export default function OutputCard({ name, status, text, error, chips, onEdit, o
     };
   }, [text, status]);
 
+  // Clean up the "copied" reset timer if the card unmounts mid-flash
+  // (e.g. the section list changes right after copying).
+  useLayoutEffect(() => {
+    return () => clearTimeout(copyTimerRef.current);
+  }, []);
+
   function copyText() {
     navigator.clipboard.writeText(text || '');
+    setCopied(true);
+    clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 1200);
+    // Re-copying while already showing "copied" just restarts the flash —
+    // nothing stops the user from copying again immediately.
   }
 
   function handleChange(e) {
@@ -66,7 +79,12 @@ export default function OutputCard({ name, status, text, error, chips, onEdit, o
             </button>
           )}
           {status === 'done' && (
-            <button className="copy-btn" onClick={copyText}>copy</button>
+            <button
+              className={`copy-btn${copied ? ' copy-btn-copied' : ''}`}
+              onClick={copyText}
+            >
+              {copied ? '✓ copied' : 'copy'}
+            </button>
           )}
         </span>
       </h3>

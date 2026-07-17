@@ -238,6 +238,7 @@ export default function App() {
                 <AppearanceModePicker colorMode={colorMode} onChange={setColorMode} disabled={isGenerating} />
               </div>
             </div>
+            <div className="divider"></div>
           </div>
 
           {validationMsgs.length > 0 && (
