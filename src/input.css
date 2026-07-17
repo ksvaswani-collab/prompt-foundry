@@ -173,6 +173,16 @@
   .out-text {
     @apply whitespace-pre-wrap font-body text-[13.5px] leading-[1.6] text-paper;
   }
+  .out-text-edit {
+    @apply w-full min-h-[150px] resize-y rounded-[3px] border border-dashed border-line bg-transparent p-2.5 font-body text-[13.5px] leading-[1.6] text-paper;
+  }
+  .out-text-edit:focus {
+    @apply border-cyan outline-none;
+  }
+
+  .validation-note {
+    @apply mt-2.5 rounded-[3px] border border-amber/35 bg-amber/10 px-2.5 py-2 font-mono text-[11.5px] leading-relaxed text-amber;
+  }
   .tokens-used {
     @apply mt-2.5 flex flex-wrap gap-1.5;
   }

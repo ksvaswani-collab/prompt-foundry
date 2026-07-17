@@ -1,6 +1,6 @@
-export default function OutputCard({ name, status, text, error, chips }) {
+export default function OutputCard({ name, status, text, error, chips, onEdit }) {
   function copyText() {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text || '');
   }
 
   return (
@@ -15,7 +15,12 @@ export default function OutputCard({ name, status, text, error, chips }) {
       {status === 'error' && <div className="err">{error}</div>}
       {status === 'done' && (
         <>
-          <div className="out-text">{text}</div>
+          <textarea
+            className="out-text-edit"
+            value={text}
+            onChange={(e) => onEdit(e.target.value)}
+            spellCheck={false}
+          />
           <div className="tokens-used">
             {chips.map((c, i) => (
               <span className="chip" key={i}>{c}</span>

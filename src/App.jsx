@@ -9,22 +9,53 @@ import OutputPanel from './components/OutputPanel';
 import { RESOLUTIONS } from './constants';
 import { generateSection } from './api';
 import { detectTokensUsed } from './tokenMatch';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 export default function App() {
-  const [industry, setIndustry] = useState({ preset: '', custom: '' });
-  const [tokens, setTokens] = useState([
+  // Every field below is persisted to the browser's local storage (per field,
+  // debounced) and restored on reload, so an accidental refresh doesn't wipe
+  // out tokens/sections/notes you've already set up.
+  const [industry, setIndustry] = useLocalStorage('promptFoundry.industry', { preset: '', custom: '' });
+  const [tokens, setTokens] = useLocalStorage('promptFoundry.tokens', [
     { name: 'Primary color', value: '' },
     { name: 'Font pairing', value: '' },
   ]);
-  const [fontPair, setFontPair] = useState({ heading: '', body: '' });
-  const [colorMode, setColorMode] = useState('light');
-  const [selectedRes, setSelectedRes] = useState('d1440');
-  const [sections, setSections] = useState([{ name: 'Hero', desc: '' }]);
-  const [notes, setNotes] = useState('');
+  const [fontPair, setFontPair] = useLocalStorage('promptFoundry.fontPair', { heading: '', body: '' });
+  const [colorMode, setColorMode] = useLocalStorage('promptFoundry.colorMode', 'light');
+  const [selectedRes, setSelectedRes] = useLocalStorage('promptFoundry.selectedRes', 'd1440');
+  const [sections, setSections] = useLocalStorage('promptFoundry.sections', [{ name: 'Hero', desc: '' }]);
+  const [notes, setNotes] = useLocalStorage('promptFoundry.notes', '');
 
-  const [outputStatus, setOutputStatus] = useState('idle'); // idle | generating | ready
-  const [results, setResults] = useState([]);
+  // outputStatus/results are persisted too, so previously generated prompts
+  // (and any edits you made to them) survive a reload. "generating"/"loading"
+  // can't actually resume after a reload — the in-flight request is gone —
+  // so we sanitize those back to a safe, non-stuck state right when we load.
+  const [outputStatus, setOutputStatus] = useLocalStorage(
+    'promptFoundry.outputStatus',
+    'idle',
+    (v) => (v === 'generating' ? 'ready' : v)
+  );
+  const [results, setResults] = useLocalStorage(
+    'promptFoundry.results',
+    [],
+    (list) =>
+      Array.isArray(list)
+        ? list.map((r) =>
+            r.status === 'loading'
+              ? { ...r, status: 'error', error: 'Interrupted by a page reload — click Generate again.' }
+              : r
+          )
+        : []
+  );
+  // Purely transient — tied to the current in-flight request, not something
+  // that should (or safely can) survive a reload.
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const hasTokens = tokens.some((t) => (t.name && t.name.trim()) || (t.value && t.value.trim()));
+  const hasFonts = !!(fontPair.heading && fontPair.body);
+  const validationMsgs = [];
+  if (!hasTokens) validationMsgs.push('no brand tokens set');
+  if (!hasFonts) validationMsgs.push('no font pairing chosen');
 
   async function generateAll() {
     const validSections = sections.filter((s) => s.name.trim());
@@ -70,6 +101,10 @@ export default function App() {
 
     setOutputStatus('ready');
     setIsGenerating(false);
+  }
+
+  function editResultText(i, val) {
+    setResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, text: val } : r)));
   }
 
   return (
@@ -119,12 +154,17 @@ export default function App() {
             onChange={(e) => setNotes(e.target.value)}
           />
 
+          {validationMsgs.length > 0 && (
+            <div className="validation-note">
+              Heads up: {validationMsgs.join(' and ')} — output will be generic / token-agnostic.
+            </div>
+          )}
           <button className="generate-btn" disabled={isGenerating} onClick={generateAll}>
             {isGenerating ? 'Generating…' : 'Generate prompts →'}
           </button>
         </div>
 
-        <OutputPanel status={outputStatus} results={results} />
+        <OutputPanel status={outputStatus} results={results} onEditResult={editResultText} />
       </div>
     </div>
   );
