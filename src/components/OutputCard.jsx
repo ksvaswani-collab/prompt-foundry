@@ -6,12 +6,16 @@ export default function OutputCard({ name, status, text, error, chips, onEdit })
   // Auto-grow the textarea to hug its content (no scrollbar, no fixed box,
   // no manual drag-resize) — matches how the old read-only <div> behaved.
   //
-  // Re-measures on two triggers:
+  // Re-measures on three triggers:
   // 1. `text`/`status` changing (new content, editing, generation finishing)
   // 2. The element's own width changing (DevTools opening, window resize,
   //    switching the resolution picker's layout) — width changes reflow the
   //    same text into more/fewer lines, so height has to be recalculated
   //    even when the text itself hasn't changed.
+  // 3. Web fonts finishing their (async) load — the very first measurement
+  //    can happen before the real fonts arrive, using fallback-font metrics
+  //    that produce a shorter height; once the real fonts swap in, the same
+  //    text can reflow onto more lines and needs re-measuring.
   useLayoutEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -32,6 +36,10 @@ export default function OutputCard({ name, status, text, error, chips, onEdit })
       rafId = requestAnimationFrame(resize);
     });
     ro.observe(el);
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(resize);
+    }
 
     return () => {
       ro.disconnect();
