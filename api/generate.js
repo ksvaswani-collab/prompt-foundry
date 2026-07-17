@@ -8,6 +8,46 @@
 // industry context are enforced here, on the server, not just assembled as
 // a string in the frontend.
 
+const LIGHT_RULES = `  - Use a bright, high-luminance canvas and surfaces, with elevation communicated through soft shadows and subtle borders rather than lighter/darker surface layering.
+  - Body text should read as a near-black/dark-neutral for strong contrast, not pure black.
+  - Ensure any provided brand tokens intended for dark backgrounds are described with adequate contrast guidance on light surfaces (e.g. used only for accents/icons rather than large fill areas) rather than inventing new values.`;
+
+const DARK_RULES = `  - Use a deep, low-luminance canvas and surfaces (near-black to dark-neutral, not just a dimmed version of a light layout), with elevation communicated through subtle lighter surface layers rather than heavy drop shadows.
+  - If a provided brand token would have poor contrast directly on a dark surface (e.g. a dark navy meant for a light background), do not invent a new hex value for it — instead describe the adjusted usage relationally (e.g. "used at reduced opacity as an accent, not as the primary surface color") while still naming the token.
+  - Body text should read as a soft off-white/light-neutral rather than pure white, and any color used for status, links, or accents should be described as a lightened/desaturated variant relationally rather than assigned an invented hex code.`;
+
+function appearanceSection(appearanceMode) {
+  if (appearanceMode === 'auto') {
+    return `APPEARANCE MODE — AUTO:
+- No light/dark mode was forced. Infer whichever reads as the more natural fit from the brand tokens, industry context, and audit notes given, then commit to it as a real decision (not a hedge).
+- State which one you chose, in one short sentence, before the layout instructions begin — then follow the same load-bearing rules a forced choice would require: real luminance/contrast decisions, not just a label.`;
+  }
+
+  if (appearanceMode === 'both') {
+    return `APPEARANCE MODE — BOTH (single dual-theme prompt):
+- This one prompt must specify BOTH a light and a dark surface treatment for the same section — not a choice between them. Structure this explicitly with a "Light theme:" pass and a "Dark theme:" pass covering surface/background/text-contrast decisions, while keeping layout, spacing, component structure, and content identical across both.
+- Light theme rules:
+${LIGHT_RULES}
+- Dark theme rules:
+${DARK_RULES}
+- Brand tokens are the same hard constraint in both themes — never invent a new hex value for either theme. Where a token has poor contrast in one theme, describe its adjusted usage relationally (e.g. "used at reduced opacity as an accent") rather than substituting a new value.
+- State clearly, once, that this section is designed to support both light and dark modes.`;
+  }
+
+  const isDark = appearanceMode === 'dark';
+  return `APPEARANCE MODE:
+- Design explicitly for ${isDark ? 'DARK' : 'LIGHT'} MODE. This must be a real, load-bearing decision, not a label:
+${isDark ? DARK_RULES : LIGHT_RULES}
+- State somewhere in the prompt that this section is being designed for ${isDark ? 'dark' : 'light'} mode.`;
+}
+
+const APPEARANCE_LABELS = {
+  light: 'light',
+  dark: 'dark',
+  both: 'both light and dark (single dual-theme prompt)',
+  auto: 'auto (model infers light or dark from context)',
+};
+
 function buildPrompt({ section, tokens, fontPair, resolution, industry, mode, notes }) {
   const validTokens = (tokens || []).filter(t => t.name || t.value);
   const tokenText = validTokens
@@ -26,7 +66,8 @@ function buildPrompt({ section, tokens, fontPair, resolution, industry, mode, no
     : { device: 'Desktop', w: 1440, h: 1024 };
 
   const industryText = (industry || '').trim();
-  const appearanceMode = mode === 'dark' ? 'dark' : 'light';
+  const appearanceMode = ['light', 'dark', 'both', 'auto'].includes(mode) ? mode : 'light';
+  const appearanceLabel = APPEARANCE_LABELS[appearanceMode];
 
   const system = `You write single, paste-ready prompts for Figma's "Canvas AI" prompt-to-design tool, for a working UI/UX designer. The person deliberately gives you SHORT, sparse input (a section name, a couple lines of intent, a short token list) and expects you to expand it into a long, rich, fully-specified prompt — you are the one doing the elaboration, not them. Rules:
 
@@ -41,12 +82,7 @@ ${industryText
     ? `- This is being designed for: ${industryText}. Let this genuinely shape decisions: information density (e.g. dense/data-forward for fintech or B2B SaaS vs. spacious/visual for hospitality or fashion), the tone of the placeholder copy you write, which trust or compliance signals belong on the page (e.g. security badges and disclaimers for finance, credentialing/HIPAA-safe language for healthcare, clear pricing and return-policy cues for e-commerce), and which components are conventionally expected in that industry's product category. Do not just mention the industry name once — let it inform actual structural choices.`
     : `- No industry was given. Use general, industry-agnostic UI/UX best practices — do not invent an industry.`}
 
-APPEARANCE MODE:
-- Design explicitly for ${appearanceMode.toUpperCase()} MODE. This must be a real, load-bearing decision, not a label:
-${appearanceMode === 'dark'
-    ? `  - Use a deep, low-luminance canvas and surfaces (near-black to dark-neutral, not just a dimmed version of a light layout), with elevation communicated through subtle lighter surface layers rather than heavy drop shadows.\n  - If a provided brand token would have poor contrast directly on a dark surface (e.g. a dark navy meant for a light background), do not invent a new hex value for it — instead describe the adjusted usage relationally (e.g. "used at reduced opacity as an accent, not as the primary surface color") while still naming the token.\n  - Body text should read as a soft off-white/light-neutral rather than pure white, and any color used for status, links, or accents should be described as a lightened/desaturated variant relationally rather than assigned an invented hex code.`
-    : `  - Use a bright, high-luminance canvas and surfaces, with elevation communicated through soft shadows and subtle borders rather than lighter/darker surface layering.\n  - Body text should read as a near-black/dark-neutral for strong contrast, not pure black.\n  - Ensure any provided brand tokens intended for dark backgrounds are described with adequate contrast guidance on light surfaces (e.g. used only for accents/icons rather than large fill areas) rather than inventing new values.`}
-- State somewhere in the prompt that this section is being designed for ${appearanceMode} mode.
+${appearanceSection(appearanceMode)}
 
 BRAND TOKENS — treat the token list as a hard constraint, not a suggestion:
 - You must use ONLY the tokens provided below. Reference each provided token by its exact name AND exact value at least once, naturally woven into the prompt (e.g. "background in Primary Navy (#1A1A2E)").
@@ -70,7 +106,7 @@ What it should contain/do: ${section.desc || '(use your judgement based on the s
 
 Industry / product context: ${industryText || '(none given — stay industry-agnostic)'}
 
-Appearance mode: ${appearanceMode}
+Appearance mode: ${appearanceLabel}
 
 Brand tokens (use ONLY these — do not invent others)${tokenText ? ` [${tokenNameList}]` : ''}:
 ${tokenText || '(none given — keep it token-agnostic, describe structurally instead of inventing values)'}
@@ -82,7 +118,7 @@ Target device: ${res.device} — ${res.w} × ${res.h}px
 
 Audit/reference notes: ${notes || '(none)'}
 
-Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token, the font pairing, the target resolution, the industry context, and the ${appearanceMode} appearance mode above must meaningfully shape the output.`;
+Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-450 words). Every token, the font pairing, the target resolution, the industry context, and the ${appearanceLabel} appearance mode above must meaningfully shape the output.`;
 
   return { system, user };
 }

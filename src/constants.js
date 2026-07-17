@@ -19,3 +19,10 @@ export const RESOLUTIONS = [
   { id: 'm375', device: 'Mobile', w: 375, h: 812 },
   { id: 'm390', device: 'Mobile', w: 390, h: 844 },
 ];
+
+export const APPEARANCE_MODES = [
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'both', label: 'Both', hint: 'one prompt, dual-theme' },
+  { id: 'auto', label: 'Auto', hint: 'model infers from tokens' },
+];

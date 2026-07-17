@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import IndustrySelect, { resolvedIndustry } from './components/IndustrySelect';
 import TokenList from './components/TokenList';
 import FontPairPicker from './components/FontPairPicker';
-import ModeToggle from './components/ModeToggle';
+import AppearanceModePicker from './components/AppearanceModePicker';
 import ResolutionPicker from './components/ResolutionPicker';
 import SectionList from './components/SectionList';
 import OutputPanel from './components/OutputPanel';
@@ -34,6 +34,7 @@ export default function App() {
   const [selectedRes, setSelectedRes] = useLocalStorage('promptFoundry.selectedRes', 'd1440');
   const [sections, setSections] = useLocalStorage('promptFoundry.sections', [{ name: 'Hero', desc: '' }]);
   const [notes, setNotes] = useLocalStorage('promptFoundry.notes', '');
+  const [showAdvanced, setShowAdvanced] = useLocalStorage('promptFoundry.showAdvanced', false);
 
   // outputStatus/results are persisted too, so previously generated prompts
   // (and any edits you made to them) survive a reload. "generating"/"loading"
@@ -191,20 +192,8 @@ export default function App() {
       <div className="grid grid-cols-[1fr_1.15fr] gap-5 max-[880px]:grid-cols-1">
         <div className="h-fit rounded border border-line bg-panel p-5">
           <div className={`panel-fields${isGenerating ? ' panel-fields-locked' : ''}`}>
-            <h2 className="panel-heading">00 — Industry / context</h2>
-            <IndustrySelect industry={industry} onChange={setIndustry} disabled={isGenerating} />
-
-            <div className="divider"></div>
             <h2 className="panel-heading">01 — Brand tokens</h2>
             <TokenList tokens={tokens} onChange={setTokens} disabled={isGenerating} />
-
-            <div className="divider"></div>
-            <h2 className="panel-heading">Font pairing</h2>
-            <FontPairPicker fontPair={fontPair} onChange={setFontPair} disabled={isGenerating} />
-
-            <div className="divider"></div>
-            <h2 className="panel-heading">Appearance mode</h2>
-            <ModeToggle colorMode={colorMode} onChange={setColorMode} disabled={isGenerating} />
 
             <div className="divider"></div>
             <h2 className="panel-heading">Target resolution</h2>
@@ -223,6 +212,32 @@ export default function App() {
               onChange={(e) => setNotes(e.target.value)}
               disabled={isGenerating}
             />
+
+            <div className="divider"></div>
+            <button
+              type="button"
+              className="accordion-toggle"
+              onClick={() => setShowAdvanced((v) => !v)}
+              aria-expanded={showAdvanced}
+              disabled={isGenerating}
+            >
+              <span>Advanced settings</span>
+              <span className={`accordion-chevron${showAdvanced ? ' open' : ''}`}>⌄</span>
+            </button>
+            <div className={`accordion-content${showAdvanced ? ' open' : ''}`}>
+              <div className="accordion-content-inner">
+                <h2 className="panel-heading">Industry / context</h2>
+                <IndustrySelect industry={industry} onChange={setIndustry} disabled={isGenerating} />
+
+                <div className="divider"></div>
+                <h2 className="panel-heading">Font pairing</h2>
+                <FontPairPicker fontPair={fontPair} onChange={setFontPair} disabled={isGenerating} />
+
+                <div className="divider"></div>
+                <h2 className="panel-heading">Appearance mode</h2>
+                <AppearanceModePicker colorMode={colorMode} onChange={setColorMode} disabled={isGenerating} />
+              </div>
+            </div>
           </div>
 
           {validationMsgs.length > 0 && (
