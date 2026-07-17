@@ -174,7 +174,7 @@
     @apply whitespace-pre-wrap font-body text-[13.5px] leading-[1.6] text-paper;
   }
   .out-text-edit {
-    @apply w-full min-h-[150px] resize-y rounded-[3px] border border-dashed border-line bg-transparent p-2.5 font-body text-[13.5px] leading-[1.6] text-paper;
+    @apply w-full resize-none overflow-hidden rounded-[3px] border border-dashed border-line bg-transparent p-2.5 font-body text-[13.5px] leading-[1.6] text-paper;
   }
   .out-text-edit:focus {
     @apply border-cyan outline-none;

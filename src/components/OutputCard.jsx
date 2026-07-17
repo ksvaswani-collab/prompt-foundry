@@ -1,6 +1,26 @@
+import { useLayoutEffect, useRef } from 'react';
+
 export default function OutputCard({ name, status, text, error, chips, onEdit }) {
+  const textareaRef = useRef(null);
+
+  // Auto-grow the textarea to hug its content (no scrollbar, no fixed box,
+  // no manual drag-resize) — matches how the old read-only <div> behaved.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [text, status]);
+
   function copyText() {
     navigator.clipboard.writeText(text || '');
+  }
+
+  function handleChange(e) {
+    onEdit(e.target.value);
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
   }
 
   return (
@@ -16,9 +36,10 @@ export default function OutputCard({ name, status, text, error, chips, onEdit })
       {status === 'done' && (
         <>
           <textarea
+            ref={textareaRef}
             className="out-text-edit"
             value={text}
-            onChange={(e) => onEdit(e.target.value)}
+            onChange={handleChange}
             spellCheck={false}
           />
           <div className="tokens-used">
