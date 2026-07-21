@@ -1,13 +1,19 @@
 # Prompt Foundry
 
-A personal AI agent that turns your brand tokens + a list of page sections into
-paste-ready Figma Canvas AI prompts — the same section-by-section, token-referenced
-workflow you already use manually for client audits.
+I kept rewriting the same style of Figma Canvas AI prompt by hand for every client
+audit — same structure, same level of detail, just swapping in that project's brand
+tokens. Prompt Foundry does that expansion for me: give it your brand tokens (colors,
+fonts, spacing) and a short list of page sections, and it turns each one into a long,
+paste-ready Canvas AI prompt that references your exact tokens instead of generic
+placeholder values.
+
+Live demo: https://prompt-foundry-indol.vercel.app
+(Note: shared demo has a daily usage cap to protect the free API quota — for regular use, deploy your own copy below, it takes about 5 minutes.)
 
 ## What it does
 1. You enter brand tokens (colors, fonts, spacing) and the sections you need
    (hero, pricing card, dashboard, etc.), plus optional audit notes.
-2. It calls Claude once per section and returns a concrete, paste-ready prompt
+2. It calls Gemini once per section and returns a concrete, paste-ready prompt
    that references your exact tokens and actively avoids generic AI-design clichés.
 3. Copy each prompt straight into Figma Canvas AI.
 
@@ -23,6 +29,10 @@ workflow you already use manually for client audits.
 2. Go to https://vercel.com/new and import that repo.
 3. In the Vercel project's **Settings → Environment Variables**, add:
    - `GEMINI_API_KEY` = your Gemini API key (get one free, no credit card, at https://aistudio.google.com/apikey)
+   - (Optional but recommended if deploying publicly) `UPSTASH_REDIS_REST_URL` and
+     `UPSTASH_REDIS_REST_TOKEN` from a free Upstash Redis database — this adds a
+     daily generation cap so a traffic spike can't burn through your Gemini quota.
+     Without these, the tool works fine but has no usage cap.
 4. Deploy. Vercel automatically detects `api/generate.js` as a serverless function,
    and `vercel.json` tells it to run `npm run build` (Vite) and serve the `dist/`
    folder it produces — no manual config needed.
@@ -69,6 +79,7 @@ Then open the local URL `vercel dev` gives you — it runs the Vite dev server
 
 ## Notes
 - Your API key never touches the browser — it stays in the serverless function.
-- Uses Gemini's free tier (`gemini-2.5-flash`) — no billing setup required to start.
-- `maxOutputTokens` is capped at 1000 per section to keep responses fast; increase
-  in `api/generate.js` if you want longer prompts.
+- Uses Gemini's free tier (`gemini-flash-latest`) — no billing setup required to start.
+- `maxOutputTokens` is capped at 3000 per section; adjust in `api/generate.js` if needed.
+- If Upstash env vars are set, requests are capped at 30/day per visitor and 300/day
+  total — adjust `DAILY_LIMIT_PER_IP` / `DAILY_LIMIT_GLOBAL` in `api/generate.js`.
