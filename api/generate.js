@@ -135,6 +135,48 @@ Reminder: expand this into a long, dense, fully-specified prompt (roughly 250-45
 
 const MAX_IMAGES = 4;
 
+// Daily caps to protect your Gemini quota from unexpected traffic.
+// If Upstash isn't configured (env vars missing) or Upstash itself errors,
+// this fails OPEN — requests are allowed through rather than the whole
+// tool breaking because of a rate-limiter problem.
+const DAILY_LIMIT_PER_IP = 30;
+const DAILY_LIMIT_GLOBAL = 300;
+
+async function checkRateLimit(ip) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return { allowed: true };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const ipKey = `ratelimit:ip:${today}:${ip}`;
+  const globalKey = `ratelimit:global:${today}`;
+
+  try {
+    const resp = await fetch(`${url}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify([
+        ["INCR", ipKey],
+        ["EXPIRE", ipKey, "86400"],
+        ["INCR", globalKey],
+        ["EXPIRE", globalKey, "86400"],
+      ]),
+    });
+    if (!resp.ok) return { allowed: true };
+
+    const [ipResult, , globalResult] = await resp.json();
+    if (ipResult.result > DAILY_LIMIT_PER_IP) {
+      return { allowed: false, reason: "You've reached today's generation limit for this tool. Try again tomorrow." };
+    }
+    if (globalResult.result > DAILY_LIMIT_GLOBAL) {
+      return { allowed: false, reason: "This tool has hit its daily usage cap across all visitors. Try again tomorrow." };
+    }
+    return { allowed: true };
+  } catch {
+    return { allowed: true };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -143,6 +185,12 @@ export default async function handler(req, res) {
   const { section, tokens, fontPair, resolution, industry, mode, notes, images } = req.body || {};
   if (!section || !section.name) {
     return res.status(400).json({ error: "Missing 'section' in request body" });
+  }
+
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
+  const rateCheck = await checkRateLimit(ip);
+  if (!rateCheck.allowed) {
+    return res.status(429).json({ error: rateCheck.reason });
   }
 
   const cleanImages = Array.isArray(images)
