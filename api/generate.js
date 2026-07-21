@@ -190,7 +190,7 @@ export default async function handler(req, res) {
   const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
   const rateCheck = await checkRateLimit(ip);
   if (!rateCheck.allowed) {
-    return res.status(429).json({ error: rateCheck.reason });
+    return res.status(429).json({ error: rateCheck.reason, ownLimit: true });
   }
 
   const cleanImages = Array.isArray(images)

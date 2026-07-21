@@ -11,6 +11,10 @@ export async function generateSection({ section, tokens, fontPair, resolution, i
   });
 
   if (resp.status === 429 && retries > 0) {
+    const preCheck = await resp.clone().json().catch(() => ({}));
+    if (preCheck.ownLimit) {
+      throw new Error(preCheck.error || "You've reached today's generation limit for this tool.");
+    }
     const wait = [2000, 5000, 10000][3 - retries];
     await new Promise((resolve, reject) => {
       const t = setTimeout(resolve, wait);
