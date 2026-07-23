@@ -33,3 +33,10 @@ export function resizeImageToBase64(file, maxDim = 900, quality = 0.68) {
     reader.readAsDataURL(file);
   });
 }
+export function buildExportMarkdown(results) {
+  const done = results.filter((r) => r.status === 'done' && r.text);
+  const date = new Date().toISOString().slice(0, 10);
+  const header = `# Prompt Foundry — Figma Canvas AI prompts\nExported ${date}\n\n`;
+  const body = done.map((r) => `## ${r.name}\n\n${r.text}`).join('\n\n---\n\n');
+  return header + body + '\n';
+}
