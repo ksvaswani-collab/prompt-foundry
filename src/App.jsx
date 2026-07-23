@@ -132,9 +132,26 @@ export default function App() {
     abortControllerRef.current = controller;
     setIsGenerating(true);
     setOutputStatus('generating');
-    setResults(validSections.map((s) => ({ name: s.name, desc: s.desc, images: s.images, status: 'queued' })));
+
+    // Keep already-finished results for sections that haven't changed since
+    // their last run; only (re)queue sections that are new, edited, or
+    // previously failed/cancelled. This is what makes "Generate" additive
+    // instead of re-running the whole batch every time it's clicked.
+    const nextResults = validSections.map((s, i) => {
+      const prev = results[i];
+      const unchanged =
+        prev &&
+        prev.status === 'done' &&
+        prev.name === s.name &&
+        prev.desc === s.desc &&
+        JSON.stringify(prev.images || []) === JSON.stringify(s.images || []);
+      return unchanged ? prev : { name: s.name, desc: s.desc, images: s.images, status: 'queued' };
+    });
+    setResults(nextResults);
 
     for (let i = 0; i < validSections.length; i++) {
+      if (nextResults[i].status !== 'queued') continue; // already done and unchanged — skip
+
       if (controller.signal.aborted) {
         setResults((prev) =>
           prev.map((r, idx) => (idx === i && r.status === 'queued' ? { ...r, status: 'cancelled' } : r))
