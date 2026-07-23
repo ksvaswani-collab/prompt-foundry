@@ -249,7 +249,7 @@ export default function App() {
       </header>
 
       <div className="grid grid-cols-[1fr_1.15fr] gap-5 max-[880px]:grid-cols-1">
-        <div className="h-fit rounded border border-line bg-panel p-5">
+        <div className="h-fit rounded border border-line bg-panel p-5 min-[881px]:sticky min-[881px]:top-7 min-[881px]:max-h-[calc(100vh-56px)] min-[881px]:overflow-y-auto">
           <div className={`panel-fields${isGenerating ? ' panel-fields-locked' : ''}`}>
             <h2 className="panel-heading">00 — Brand preset</h2>
             <PresetManager
