@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import IndustrySelect, { resolvedIndustry } from './components/IndustrySelect';
+import PresetManager from './components/PresetManager';
 import TokenList from './components/TokenList';
 import FontPairPicker from './components/FontPairPicker';
 import AppearanceModePicker from './components/AppearanceModePicker';
@@ -31,6 +32,8 @@ export default function App() {
   ]);
   const [fontPair, setFontPair] = useLocalStorage('promptFoundry.fontPair', { heading: '', body: '' });
   const [colorMode, setColorMode] = useLocalStorage('promptFoundry.colorMode', 'light');
+  const [presets, setPresets] = useLocalStorage('promptFoundry.presets', []);
+  const [activePresetId, setActivePresetId] = useLocalStorage('promptFoundry.activePresetId', '');
   const [selectedRes, setSelectedRes] = useLocalStorage('promptFoundry.selectedRes', 'd1440');
   const [sections, setSections] = useLocalStorage(
     'promptFoundry.sections',
@@ -182,7 +185,39 @@ export default function App() {
   function editResultText(i, val) {
     setResults((prev) => prev.map((r, idx) => (idx === i ? { ...r, text: val } : r)));
   }
+  function loadPreset(id) {
+    const preset = presets.find((p) => p.id === id);
+    if (!preset) return;
+    setIndustry(preset.industry);
+    setTokens(preset.tokens);
+    setFontPair(preset.fontPair);
+    setColorMode(preset.colorMode);
+    setActivePresetId(id);
+  }
 
+  function savePresetAsNew(name) {
+    const preset = {
+      id: crypto.randomUUID(),
+      name,
+      industry,
+      tokens,
+      fontPair,
+      colorMode,
+    };
+    setPresets((prev) => [...prev, preset]);
+    setActivePresetId(preset.id);
+  }
+
+  function updateActivePreset() {
+    setPresets((prev) =>
+      prev.map((p) => (p.id === activePresetId ? { ...p, industry, tokens, fontPair, colorMode } : p))
+    );
+  }
+
+  function deletePreset(id) {
+    setPresets((prev) => prev.filter((p) => p.id !== id));
+    if (activePresetId === id) setActivePresetId('');
+  }
   return (
     <div className="mx-auto max-w-[1180px]">
       <header className="mb-[22px] flex flex-wrap items-baseline justify-between gap-2">
@@ -199,6 +234,18 @@ export default function App() {
       <div className="grid grid-cols-[1fr_1.15fr] gap-5 max-[880px]:grid-cols-1">
         <div className="h-fit rounded border border-line bg-panel p-5">
           <div className={`panel-fields${isGenerating ? ' panel-fields-locked' : ''}`}>
+            <h2 className="panel-heading">00 — Brand preset</h2>
+            <PresetManager
+              presets={presets}
+              activeId={activePresetId}
+              onLoad={loadPreset}
+              onSaveNew={savePresetAsNew}
+              onUpdate={updateActivePreset}
+              onDelete={deletePreset}
+              disabled={isGenerating}
+            />
+
+            <div className="divider"></div>
             <h2 className="panel-heading">01 — Brand tokens</h2>
             <TokenList tokens={tokens} onChange={setTokens} disabled={isGenerating} />
 
