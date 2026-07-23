@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 export default function PresetManager({ presets, activeId, onLoad, onSaveNew, onUpdate, onDelete, disabled }) {
   const [isNaming, setIsNaming] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const [flash, setFlash] = useState(''); // '', 'saved', 'updated'
+  const flashTimer = useRef(null);
 
   const activePreset = presets.find((p) => p.id === activeId);
+
+  function showFlash(kind) {
+    clearTimeout(flashTimer.current);
+    setFlash(kind);
+    flashTimer.current = setTimeout(() => setFlash(''), 1800);
+  }
 
   function startSaveNew() {
     setNameDraft('');
@@ -16,6 +24,12 @@ export default function PresetManager({ presets, activeId, onLoad, onSaveNew, on
     if (!trimmed) return;
     onSaveNew(trimmed);
     setIsNaming(false);
+    showFlash('saved');
+  }
+
+  function handleUpdate() {
+    onUpdate();
+    showFlash('updated');
   }
 
   function handleDelete() {
@@ -27,6 +41,10 @@ export default function PresetManager({ presets, activeId, onLoad, onSaveNew, on
 
   return (
     <div>
+      <p className="preset-caption">
+        Save the tokens, font pairing, industry, and appearance mode below as a reusable preset per client.
+      </p>
+
       <div className="flex gap-2">
         <select
           className="field field-select flex-1"
@@ -44,26 +62,28 @@ export default function PresetManager({ presets, activeId, onLoad, onSaveNew, on
         {activePreset && (
           <button
             type="button"
-            className="icon-btn"
+            className="icon-btn icon-btn-danger"
             onClick={handleDelete}
             disabled={disabled}
             title={`Delete "${activePreset.name}"`}
           >
-            ×
+            🗑
           </button>
         )}
       </div>
 
       {!isNaming ? (
-        <div className="mt-2 flex flex-wrap gap-3">
-          <button type="button" className="add-link" onClick={startSaveNew} disabled={disabled}>
-            + save current as new preset
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button type="button" className="preset-btn preset-btn-save" onClick={startSaveNew} disabled={disabled}>
+            + save as new preset
           </button>
           {activePreset && (
-            <button type="button" className="add-link" onClick={onUpdate} disabled={disabled}>
+            <button type="button" className="preset-btn preset-btn-update" onClick={handleUpdate} disabled={disabled}>
               ↺ update "{activePreset.name}"
             </button>
           )}
+          {flash === 'saved' && <span className="preset-flash">Saved ✓</span>}
+          {flash === 'updated' && <span className="preset-flash">Updated ✓</span>}
         </div>
       ) : (
         <div className="mt-2 flex gap-2">

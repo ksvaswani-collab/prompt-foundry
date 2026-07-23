@@ -73,8 +73,30 @@
   .icon-btn {
     @apply w-[34px] flex-none cursor-pointer rounded-[3px] border border-line bg-transparent text-base text-muted hover:border-amber hover:text-amber;
   }
+  /* combine with .icon-btn for destructive actions (e.g. deleting a preset) —
+     overrides the default amber hover with red, since two classes beats the
+     single-class .icon-btn:hover on specificity regardless of source order */
+  .icon-btn.icon-btn-danger:hover {
+    @apply border-err text-err;
+  }
   .add-link {
     @apply cursor-pointer border-none bg-transparent py-1 text-left font-mono text-xs text-mint hover:text-cyan;
+  }
+  .preset-caption {
+    @apply mb-2.5 -mt-1 font-mono text-[11.5px] leading-relaxed text-muted;
+  }
+  .preset-btn {
+    @apply cursor-pointer rounded-[3px] border bg-transparent px-2.5 py-1.5 font-mono text-xs transition-transform duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .preset-btn-save {
+    @apply border-mint/40 text-mint hover:border-mint;
+  }
+  .preset-btn-update {
+    @apply border-cyan/40 text-cyan hover:border-cyan;
+  }
+  .preset-flash {
+    @apply font-mono text-xs text-mint;
+    animation: flash-in 150ms ease;
   }
   .section-block {
     @apply mb-2.5 rounded-[3px] border border-dashed border-line p-2.5;
@@ -286,4 +308,8 @@
   40% { content: '.'; }
   60% { content: '..'; }
   80%, 100% { content: '...'; }
+}
+@keyframes flash-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
