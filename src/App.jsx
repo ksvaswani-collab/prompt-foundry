@@ -249,86 +249,89 @@ export default function App() {
       </header>
 
       <div className="grid grid-cols-[1fr_1.15fr] gap-5 max-[880px]:grid-cols-1">
-        <div className="h-fit rounded border border-line bg-panel p-5 min-[881px]:sticky min-[881px]:top-7 min-[881px]:max-h-[calc(100vh-56px)] min-[881px]:overflow-y-auto">
-          <div className={`panel-fields${isGenerating ? ' panel-fields-locked' : ''}`}>
-            <h2 className="panel-heading">00 — Brand preset</h2>
-            <PresetManager
-              presets={presets}
-              activeId={activePresetId}
-              onLoad={loadPreset}
-              onSaveNew={savePresetAsNew}
-              onUpdate={updateActivePreset}
-              onDelete={deletePreset}
-              disabled={isGenerating}
-            />
+        <div className="rounded border border-line bg-panel min-[881px]:sticky min-[881px]:top-7 min-[881px]:flex min-[881px]:max-h-[calc(100vh-56px)] min-[881px]:flex-col">
+          <div className="panel-scroll p-5 min-[881px]:min-h-0 min-[881px]:flex-1 min-[881px]:overflow-y-auto">
+            <div className={`panel-fields${isGenerating ? ' panel-fields-locked' : ''}`}>
+              <h2 className="panel-heading">00 — Brand preset</h2>
+              <PresetManager
+                presets={presets}
+                activeId={activePresetId}
+                onLoad={loadPreset}
+                onSaveNew={savePresetAsNew}
+                onUpdate={updateActivePreset}
+                onDelete={deletePreset}
+                disabled={isGenerating}
+              />
 
-            <div className="divider"></div>
-            <h2 className="panel-heading">01 — Brand tokens</h2>
-            <TokenList tokens={tokens} onChange={setTokens} disabled={isGenerating} />
+              <div className="divider"></div>
+              <h2 className="panel-heading">01 — Brand tokens</h2>
+              <TokenList tokens={tokens} onChange={setTokens} disabled={isGenerating} />
 
-            <div className="divider"></div>
-            <h2 className="panel-heading">Target resolution</h2>
-            <ResolutionPicker selectedRes={selectedRes} onChange={setSelectedRes} disabled={isGenerating} />
+              <div className="divider"></div>
+              <h2 className="panel-heading">Target resolution</h2>
+              <ResolutionPicker selectedRes={selectedRes} onChange={setSelectedRes} disabled={isGenerating} />
 
-            <div className="divider"></div>
-            <h2 className="panel-heading">02 — Sections to generate</h2>
-            <SectionList sections={sections} onChange={setSections} disabled={isGenerating} />
+              <div className="divider"></div>
+              <h2 className="panel-heading">02 — Sections to generate</h2>
+              <SectionList sections={sections} onChange={setSections} disabled={isGenerating} />
 
-            <div className="divider"></div>
-            <h2 className="panel-heading">03 — Audit / reference notes (optional)</h2>
-            <textarea
-              className="field field-textarea"
-              placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isGenerating}
-            />
+              <div className="divider"></div>
+              <h2 className="panel-heading">03 — Audit / reference notes (optional)</h2>
+              <textarea
+                className="field field-textarea"
+                placeholder="e.g. sibling sites use rounded cards + soft shadows; avoid the generic gradient hero we keep seeing; client wants dense, information-forward layout not marketing-fluffy"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isGenerating}
+              />
 
-            <div className="divider"></div>
-            <button
-              type="button"
-              className="accordion-toggle"
-              onClick={() => setShowAdvanced((v) => !v)}
-              aria-expanded={showAdvanced}
-              disabled={isGenerating}
-            >
-              <span>Advanced settings</span>
-              <span className={`accordion-chevron${showAdvanced ? ' open' : ''}`}>⌄</span>
-            </button>
-            <div className={`accordion-content${showAdvanced ? ' open' : ''}`}>
-              <div className="accordion-content-inner">
-                <h2 className="panel-heading">Industry / context</h2>
-                <IndustrySelect industry={industry} onChange={setIndustry} disabled={isGenerating} />
+              <div className="divider"></div>
+              <button
+                type="button"
+                className="accordion-toggle"
+                onClick={() => setShowAdvanced((v) => !v)}
+                aria-expanded={showAdvanced}
+                disabled={isGenerating}
+              >
+                <span>Advanced settings</span>
+                <span className={`accordion-chevron${showAdvanced ? ' open' : ''}`}>⌄</span>
+              </button>
+              <div className={`accordion-content${showAdvanced ? ' open' : ''}`}>
+                <div className="accordion-content-inner">
+                  <h2 className="panel-heading">Industry / context</h2>
+                  <IndustrySelect industry={industry} onChange={setIndustry} disabled={isGenerating} />
 
-                <div className="divider"></div>
-                <h2 className="panel-heading">Font pairing</h2>
-                <FontPairPicker fontPair={fontPair} onChange={setFontPair} disabled={isGenerating} />
+                  <div className="divider"></div>
+                  <h2 className="panel-heading">Font pairing</h2>
+                  <FontPairPicker fontPair={fontPair} onChange={setFontPair} disabled={isGenerating} />
 
-                <div className="divider"></div>
-                <h2 className="panel-heading">Appearance mode</h2>
-                <AppearanceModePicker colorMode={colorMode} onChange={setColorMode} disabled={isGenerating} />
+                  <div className="divider"></div>
+                  <h2 className="panel-heading">Appearance mode</h2>
+                  <AppearanceModePicker colorMode={colorMode} onChange={setColorMode} disabled={isGenerating} />
+                </div>
               </div>
             </div>
-            <div className="divider"></div>
           </div>
 
-          {validationMsgs.length > 0 && (
-            <div className="validation-note">
-              Heads up: {validationMsgs.join(' and ')} — output will be generic / token-agnostic.
-            </div>
-          )}
-          <button
-            className={`generate-btn${isGenerating ? ' stop-mode' : ''}`}
-            onClick={isGenerating ? stopGeneration : generateAll}
-          >
-            {isGenerating ? (
-              <>
-                <span className="spin"></span>Stop generating
-              </>
-            ) : (
-              'Generate prompts →'
+          <div className="border-t border-line p-5">
+            {validationMsgs.length > 0 && (
+              <div className="validation-note">
+                Heads up: {validationMsgs.join(' and ')} — output will be generic / token-agnostic.
+              </div>
             )}
-          </button>
+            <button
+              className={`generate-btn${isGenerating ? ' stop-mode' : ''}`}
+              onClick={isGenerating ? stopGeneration : generateAll}
+            >
+              {isGenerating ? (
+                <>
+                  <span className="spin"></span>Stop generating
+                </>
+              ) : (
+                'Generate prompts →'
+              )}
+            </button>
+          </div>
         </div>
 
         <OutputPanel
